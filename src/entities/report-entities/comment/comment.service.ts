@@ -1,0 +1,36 @@
+import { BadGatewayException, Injectable } from "@nestjs/common";
+import { CommentRepository } from "./comment.repository";
+import { CommentDTO } from "./comment.types";
+import { MESSAGE_TYPES } from "src/contants";
+
+@Injectable()
+export class CommentService {
+    constructor(private readonly repository: CommentRepository) { }
+
+    async postComment(comment: CommentDTO) {
+        try {
+            await this.repository.postComment({
+                ...comment,
+                date: new Date(comment.date)
+            });
+
+            return {
+                message: 'ההודעה נשמרה בהצלחה',
+                type: MESSAGE_TYPES.SUCCESS
+            }
+        } catch (error) {
+            console.error('Error posting comment:', error);
+            throw new BadGatewayException({
+                message: 'נכשלה שמירת ההודעה, יש לנסות שוב',
+                type: MESSAGE_TYPES.FAILURE
+            });
+        }
+    }
+
+    deleteComment(comment: CommentDTO) {
+        return this.repository.deleteComment({
+            ...comment,
+            date: new Date(comment.date)
+        });
+    }
+}

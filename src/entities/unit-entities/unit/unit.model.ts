@@ -1,28 +1,57 @@
-import { Column, DataType, HasMany, Model, PrimaryKey, Table } from "sequelize-typescript";
-import { UnitDetail } from "../unit-details/unit-details.model";
-import { UnitStatusTypes } from "../units-statuses/units-statuses.model";
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  PrimaryKey,
+  Table,
+  Index,
+} from "sequelize-typescript";
+import { UnitId } from "../unit-id/unit-id.model";
 
 export type IUnit = {
-  id: number;
-  simul?: string | null;
+  unitId: number;
+  startDate: Date;
+  endDate: Date;
+
+  objectType: string;
+  description?: string | null;
+
+  unitLevelId: number;
+  unitTypeId?: number | null;
+  tsavIrgunCodeId?: string | null;
 };
 
 @Table({ tableName: "units", timestamps: false })
 export class Unit extends Model<IUnit> {
   @PrimaryKey
-  @Column(DataType.INTEGER)
-  declare id: number;
+  @ForeignKey(() => UnitId)
+  @Column({ field: "unit_id", type: DataType.INTEGER })
+  declare unitId: number;
 
-  @Column({ field: "simul", type: DataType.STRING })
-  declare simul: string | null;
+  @PrimaryKey
+  @Column({ field: "start_date", type: DataType.DATE })
+  declare startDate: Date;
 
-  @HasMany(() => UnitDetail, { foreignKey: "unitId" })
-  declare details?: UnitDetail[];
+  @Column({ field: "end_date", type: DataType.DATE })
+  declare endDate: Date;
 
-  @HasMany(() => UnitStatusTypes, { foreignKey: "unitId" })
-  declare unitStatusHistory?: UnitStatusTypes[];
-  
-  get activeDetail(): UnitDetail | undefined {
-    return this.details?.[0];
-  }
+  @Column({ field: "object_type", type: DataType.STRING(2) })
+  declare objectType: string;
+
+  @Column(DataType.STRING(255))
+  declare description: string | null;
+
+  @Column({ field: "level_id", type: DataType.INTEGER })
+  declare unitLevelId: number;
+
+  @Column({ field: "unit_type_id", type: DataType.INTEGER })
+  declare unitTypeId: number | null;
+
+  @Column({ field: "tsav_irgun_code", type: DataType.STRING(10) })
+  declare tsavIrgunCodeId: string | null;
+
+  @BelongsTo(() => UnitId)
+  declare unit?: UnitId;
 }

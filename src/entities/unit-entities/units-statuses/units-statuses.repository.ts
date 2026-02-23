@@ -1,18 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Op } from "sequelize";
+import { Transaction } from "sequelize";
 import { UNIT_RELATION_TYPES } from "src/contants";
 import { UnitRelation } from "../unit-relations/unit-relation.model";
-import { IUnitStatusTypes, UnitStatusTypes } from "./units-statuses.model";
+import { IUnitStatus, UnitStatus } from "./units-statuses.model";
 
 @Injectable()
 export class UnitStatusTypesRepository {
     constructor(
-        @InjectModel(UnitStatusTypes) private readonly unitStatusHistoryModel: typeof UnitStatusTypes,
+        @InjectModel(UnitStatus) private readonly unitStatusHistoryModel: typeof UnitStatus,
         @InjectModel(UnitRelation) private readonly unitRelationModel: typeof UnitRelation,
     ) { }
 
-    async fetchHierarchyUnitIds(date: string, unitIds: number[]) {
+    async fetchHierarchyUnitIds(date: string, unitIds: number[], transaction?: Transaction) {
         const rootUnitIds = [...new Set(unitIds)];
         if (rootUnitIds.length === 0) return [];
 
@@ -29,7 +30,8 @@ export class UnitStatusTypesRepository {
                     unitId: { [Op.in]: frontier },
                     startDate: { [Op.lt]: now },
                     endDate: { [Op.gte]: now }
-                }
+                },
+                transaction,
             });
 
             const next: number[] = [];
@@ -48,9 +50,31 @@ export class UnitStatusTypesRepository {
         return hierarchyUnitIds;
     }
 
-    updateStatuses(unitsStatuses: IUnitStatusTypes[]) {
+    updateStatuses(unitsStatuses: IUnitStatus[]) {
         return this.unitStatusHistoryModel.bulkCreate(unitsStatuses, {
             updateOnDuplicate: ['unitStatusId'],
         })
+    }
+
+    clearStatusesForUnitsDate(unitIds: number[], date: string, transaction?: Transaction) {
+        if (unitIds.length === 0) return Promise.resolve(0);
+
+        return this.unitStatusHistoryModel.destroy({
+            where: {
+                unitId: { [Op.in]: unitIds },
+                date,
+            },
+            transaction,
+        });
+    }
+
+    clearStatusForUnitDate(unitId: number, date: string, transaction?: Transaction) {
+        return this.unitStatusHistoryModel.destroy({
+            where: {
+                unitId,
+                date,
+            },
+            transaction,
+        });
     }
 }

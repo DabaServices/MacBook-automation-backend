@@ -12,8 +12,8 @@ import { Comment } from "src/entities/report-entities/comment/comment.model";
 import { Report } from "src/entities/report-entities/report/report.model";
 import { ReportItem } from "src/entities/report-entities/report-item/report-item.model";
 import { Stock } from "src/entities/report-entities/stock/stock.model";
+import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
 import { Unit } from "src/entities/unit-entities/unit/unit.model";
-import { UnitDetail } from "src/entities/unit-entities/unit-details/unit-details.model";
 
 @Module({
     imports: [
@@ -28,8 +28,8 @@ import { UnitDetail } from "src/entities/unit-entities/unit-details/unit-details
             SecondCategory,
             Stock,
             SubCategory,
+            UnitId,
             Unit,
-            UnitDetail,
             UnitFavoriteMaterial,
         ]),
     ],
@@ -37,4 +37,4 @@ import { UnitDetail } from "src/entities/unit-entities/unit-details/unit-details
     providers: [MaterialService, MaterialRepository]
 })
 
-export class MaterialModule {}
+export class MaterialModule { }

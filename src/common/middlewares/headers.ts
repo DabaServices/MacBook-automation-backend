@@ -9,8 +9,12 @@ export class HeadersMiddeware implements NestMiddleware {
 
         if (!date) throw new UnauthorizedException('Missing authorization headers');
 
+        const normalizedUser = Array.isArray(user) ? user[0] : user;
+
         req['date'] = date;
-        req['username'] = 'S9107544';
+        req['username'] = typeof normalizedUser === 'string' && normalizedUser.trim()
+            ? normalizedUser.trim()
+            : 'S9107544';
         next();
     }
 }

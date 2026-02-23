@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsInt, Min } from "class-validator";
+import { IsArray, IsBoolean, IsInt, IsOptional, Min } from "class-validator";
 
 export class UpdateUnitStatus {
     @IsArray()
@@ -13,4 +13,8 @@ export class UpdateUnitStatus {
 
     @IsBoolean()
     updateHierarchy: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    clearHierarchyStatuses?: boolean;
 }

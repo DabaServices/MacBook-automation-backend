@@ -1,17 +1,17 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from "sequelize-typescript";
 import { UnitStatusType } from "../unit-status-type/unit-status-type.model";
-import { Unit } from "../unit/unit.model";
+import { UnitId } from "../unit-id/unit-id.model";
 
-export type IUnitStatusTypes = {
+export type IUnitStatus = {
   unitId: number;
   unitStatusId: number;
   date: Date;
 };
 
 @Table({ tableName: "units_statuses", timestamps: false })
-export class UnitStatusTypes extends Model<IUnitStatusTypes> {
+export class UnitStatus extends Model<IUnitStatus> {
   @PrimaryKey
-  @ForeignKey(() => Unit)
+  @ForeignKey(() => UnitId)
   @Column({ field: "unit_id", type: DataType.INTEGER })
   declare unitId: number;
 
@@ -25,6 +25,6 @@ export class UnitStatusTypes extends Model<IUnitStatusTypes> {
   @BelongsTo(() => UnitStatusType, { foreignKey: "unitStatusId", as: "unitStatus" })
   declare unitStatus?: UnitStatusType;
 
-  @BelongsTo(() => Unit, { foreignKey: 'unitId'})
-  declare unit?: Unit
+  @BelongsTo(() => UnitId, { foreignKey: 'unitId'})
+  declare unit?: UnitId
 }

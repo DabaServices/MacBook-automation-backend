@@ -2,7 +2,7 @@ import {
   BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table
 } from "sequelize-typescript";
 import { Material } from "src/entities/material-entities/material/material.model";
-import { Unit } from "src/entities/unit-entities/unit/unit.model";
+import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
 import { Report } from "../report/report.model";
 
 export type IReportItem = {
@@ -34,7 +34,7 @@ export class ReportItem extends Model<IReportItem> {
   @Column({ field: "reporting_level", type: DataType.INTEGER })
   declare reportingLevel: number;
 
-  @ForeignKey(() => Unit)
+  @ForeignKey(() => UnitId)
   @Column({ field: "reporting_unit", type: DataType.INTEGER })
   declare reportingUnitId: number;
 
@@ -58,5 +58,5 @@ export class ReportItem extends Model<IReportItem> {
 
   @BelongsTo(() => Report) declare report?: Report;
   @BelongsTo(() => Material) declare material?: Material;
-  @BelongsTo(() => Unit, { foreignKey: "reportingUnitId" }) declare reportingUnit?: Unit;
+  @BelongsTo(() => UnitId, { foreignKey: "reportingUnitId" }) declare reportingUnit?: UnitId;
 }

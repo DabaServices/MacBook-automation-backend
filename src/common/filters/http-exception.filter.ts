@@ -17,6 +17,13 @@ const normalizeMessage = (value: unknown): string => {
   return "Internal server error";
 };
 
+const normalizeType = (value: unknown): string | null => {
+  if (!value || typeof value !== "object") return null;
+  if (!("type" in value)) return null;
+  const type = (value as { type?: unknown }).type;
+  return typeof type === "string" ? type : null;
+};
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
@@ -31,6 +38,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const normalized =
       exception instanceof HttpException
         ? normalizeMessage(exception.getResponse())
+        : null;
+    const normalizedType =
+      exception instanceof HttpException
+        ? normalizeType(exception.getResponse())
         : null;
 
     const message =
@@ -48,6 +59,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       body: {
         data: null,
         message,
+        ...(normalizedType ? { type: normalizedType } : {}),
       },
     });
   }

@@ -17,3 +17,25 @@ export const MESSAGE_TYPES = {
     FAILURE: 'Failure',
     SUCCESS: 'Success'
 }
+
+export const REPORT_TYPES = {
+    REQUEST: 0,
+    INVENTORY: 1,
+    USAGE: 2,
+    ALLOCATION: 4
+}
+
+export const UNIT_LEVELS = {
+    GDUD: 4,
+    HATIVA: 3,
+    UGDA: 2,
+    PIKUD: 1,
+    MATKAL: 0
+}
+
+export const UNIT_STATUSES = {
+    REQUESTING: 0,
+    WAITING_FOR_ALLOCATION: 1,
+    ALLOCATING: 2,
+    FINISHED: 3
+}

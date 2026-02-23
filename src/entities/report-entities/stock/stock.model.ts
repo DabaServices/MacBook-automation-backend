@@ -1,6 +1,6 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from "sequelize-typescript";
 import { Material } from "src/entities/material-entities/material/material.model";
-import { Unit } from "src/entities/unit-entities/unit/unit.model";
+import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
 
 export type IStock = {
   materialId: string;
@@ -19,7 +19,7 @@ export class Stock extends Model<IStock> {
   declare materialId: string;
 
   @PrimaryKey
-  @ForeignKey(() => Unit)
+  @ForeignKey(() => UnitId)
   @Column({ field: "unit_id", type: DataType.INTEGER })
   declare unitId: number;
 
@@ -39,5 +39,5 @@ export class Stock extends Model<IStock> {
   declare quantity: string;
 
   @BelongsTo(() => Material) declare material?: Material;
-  @BelongsTo(() => Unit) declare unit?: Unit;
+  @BelongsTo(() => UnitId) declare unit?: UnitId;
 }

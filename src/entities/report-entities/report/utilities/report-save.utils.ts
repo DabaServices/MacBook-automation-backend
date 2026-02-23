@@ -1,4 +1,3 @@
-import type { UnitDetail } from "src/entities/unit-entities/unit-details/unit-details.model";
 import type { IReportsChanges, SaveReportsBody } from "../report.types";
 
 type BuildReportsParams = {
@@ -11,14 +10,6 @@ type BuildReportsParams = {
     createdBy: string;
     recordStatus: string;
     parentByChild: Map<number, number>;
-};
-
-export const getReportingLevel = (unitDetails: UnitDetail[], reportingUnitId: number) => {
-    return (
-        unitDetails[0]?.unitLevelId ??
-        unitDetails.find(detail => detail.unitId === reportingUnitId)?.unitLevelId ??
-        0
-    );
 };
 
 export const buildReportsToSave = ({

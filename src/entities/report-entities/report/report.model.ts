@@ -2,17 +2,17 @@ import {
   BelongsTo, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table
 } from "sequelize-typescript";
 import { ReportItem } from "../report-item/report-item.model";
-import { Unit } from "src/entities/unit-entities/unit/unit.model";
+import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
 
 export type IReport = {
   id?: number;
   reportTypeId: number;
   unitId: number;
-  recipientUnitId: number;
+  recipientUnitId: number | null;
   reporterUnitId?: number | null;
   createdOn?: Date | null;
   createdAt?: string | null;
-  createdBy: string;
+  createdBy: string | null;
 };
 
 @Table({ tableName: "reports", timestamps: false })
@@ -28,7 +28,7 @@ export class Report extends Model<IReport> {
   declare unitId: number;
 
   @Column({ field: "recipient_unit_id", type: DataType.INTEGER })
-  declare recipientUnitId: number;
+  declare recipientUnitId: number | null;
 
   @Column({ field: "reporter_unit_id", type: DataType.INTEGER })
   declare reporterUnitId: number | null;
@@ -40,11 +40,11 @@ export class Report extends Model<IReport> {
   declare createdAt: string | null;
 
   @Column({ field: "created_by", type: DataType.STRING(20) })
-  declare createdBy: string;
+  declare createdBy: string | null;
 
-  @BelongsTo(() => Unit, { foreignKey: "unitId", as: "unit" }) declare unit?: Unit;
-  @BelongsTo(() => Unit, { foreignKey: "recipientUnitId", as: "recipientUnit" }) declare recipientUnit?: Unit;
-  @BelongsTo(() => Unit, { foreignKey: "reporterUnitId", as: "reporterUnit" }) declare reporterUnit?: Unit;
+  @BelongsTo(() => UnitId, { foreignKey: "unitId", as: "unit" }) declare unit?: UnitId;
+  @BelongsTo(() => UnitId, { foreignKey: "recipientUnitId", as: "recipientUnit" }) declare recipientUnit?: UnitId;
+  @BelongsTo(() => UnitId, { foreignKey: "reporterUnitId", as: "reporterUnit" }) declare reporterUnit?: UnitId;
 
   @HasMany(() => ReportItem) declare items?: ReportItem[];
 }

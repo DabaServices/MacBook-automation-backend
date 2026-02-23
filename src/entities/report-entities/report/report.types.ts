@@ -12,6 +12,22 @@ export type SaveReportsBody = {
     children: number[]
 }
 
+export type AggregateReportsDTO = {
+    unitsIds: number[];
+    lowerUnitsIds: number[];
+}
+
+export type AggregateUnitDto = UnitDto & {
+    isEmergencyUnit: boolean;
+};
+
+export type AggregateHierarchyMapsDto = {
+    unitIds: number[];
+    lowerUnitsIds: number[];
+    unitsMap: Record<number, AggregateUnitDto>;
+    childrenByParentMap: Record<number, AggregateUnitDto[]>;
+};
+
 export type IReportsChanges = {
     header: IReport,
     items: IReportItem[]
@@ -23,12 +39,9 @@ export type ReportChanges = {
     skipEmptyItems?: boolean;
 }
 
-export type VisibilityTypes = "hidden" | "visible";
-
 export type UnitStatusDto = {
     id: number;
     description: string;
-    visibility: VisibilityTypes;
 };
 
 export type UnitDto = {
@@ -59,7 +72,6 @@ export type MaterialDto = {
     nickname: string;
     category: string;
     unitOfMeasure: string;
-    favorite: boolean;
 };
 
 export type ReportDto = {
@@ -68,3 +80,8 @@ export type ReportDto = {
     allocatedQuantity: number | null;
     items: ReportItemDto[];
 };
+
+export type AggregatedMaterials = {
+    materialId: string;
+    quantity: number;
+}

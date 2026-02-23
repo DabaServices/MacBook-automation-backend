@@ -1,6 +1,6 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from "sequelize-typescript";
 import { Material } from "src/entities/material-entities/material/material.model";
-import { Unit } from "src/entities/unit-entities/unit/unit.model";
+import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
 
 export type IComment = {
   unitId: number;
@@ -14,7 +14,7 @@ export type IComment = {
 @Table({ tableName: "comments", timestamps: false })
 export class Comment extends Model<IComment> {
   @PrimaryKey
-  @ForeignKey(() => Unit)
+  @ForeignKey(() => UnitId)
   @Column({ field: "unit_id", type: DataType.INTEGER })
   declare unitId: number;
 
@@ -32,7 +32,7 @@ export class Comment extends Model<IComment> {
   declare type: number;
 
   @PrimaryKey
-  @ForeignKey(() => Unit)
+  @ForeignKey(() => UnitId)
   @Column({ field: "recipient_unit_id", type: DataType.INTEGER })
   declare recipientUnitId: number;
 
@@ -40,6 +40,6 @@ export class Comment extends Model<IComment> {
   declare text: string | null;
 
   @BelongsTo(() => Material) declare material?: Material;
-  @BelongsTo(() => Unit, { foreignKey: "unitId", as: "unit" }) declare unit?: Unit;
-  @BelongsTo(() => Unit, { foreignKey: "recipientUnitId", as: "recipientUnit" }) declare recipientUnit?: Unit;
+  @BelongsTo(() => UnitId, { foreignKey: "unitId", as: "unit" }) declare unit?: UnitId;
+  @BelongsTo(() => UnitId, { foreignKey: "recipientUnitId", as: "recipientUnit" }) declare recipientUnit?: UnitId;
 }
