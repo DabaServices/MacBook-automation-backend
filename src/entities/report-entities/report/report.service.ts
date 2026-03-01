@@ -2,7 +2,7 @@ import { BadGatewayException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Op } from "sequelize";
 import { Sequelize } from "sequelize-typescript";
-import { MESSAGE_TYPES, RECORD_STATUS } from "src/contants";
+import { MESSAGE_TYPES } from "src/contants";
 import { UnitHierarchyService } from "src/entities/unit-entities/features/unit-hierarchy/unit-hierarchy.service";
 import { UnitRelation } from "src/entities/unit-entities/unit-relations/unit-relation.model";
 import { Unit } from "src/entities/unit-entities/unit/unit.model";
@@ -72,11 +72,10 @@ export class ReportService {
                 createdOn: date,
                 createdAt: formattedTime,
                 createdBy: username,
-                recordStatus: RECORD_STATUS.ACTIVE,
                 parentByChild
             });
 
-            await this.repository.upsertReports({
+            await this.repository.saveReports({
                 reportsToSave,
                 transaction,
             });
@@ -99,6 +98,7 @@ export class ReportService {
 
     async fetchReports(date: string, recipientUnitId: number): Promise<ReportDto[]> {
         const reports = await this.repository.fetchReportsData(date, recipientUnitId);
+
         return buildReportsResponse({
             recipientUnitId,
             reports,
@@ -130,7 +130,7 @@ export class ReportService {
             assertLowerHierarchyStable(aggregatedReportsDTO.lowerUnitsIds ?? [], lowerUnitsIds);
 
             const resolveUnit = buildUnitResolver(unitsById, emergencyUnitLookup);
-            
+
             const unitsMap = buildUnitsMap(connectedUnitIds, screenUnitId, parentsByChild, resolveUnit);
             const childrenByParentMap = buildChildrenByParentMap(
                 childrenByParent,
@@ -153,13 +153,13 @@ export class ReportService {
                 username: user
             });
 
-            await this.repository.upsertReports({
+            await this.repository.saveReports({
                 reportsToSave: reportsToSave ?? [],
                 transaction
             });
 
             await transaction.commit();
-            
+
             return {
                 message: 'ההירככיה ננעלה בהצלחה',
                 type: MESSAGE_TYPES.SUCCESS,

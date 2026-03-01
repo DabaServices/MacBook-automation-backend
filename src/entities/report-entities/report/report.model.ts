@@ -1,8 +1,9 @@
 import {
-  BelongsTo, Column, DataType, ForeignKey, HasMany, Model, PrimaryKey, Table
+  BelongsTo, Column, DataType,
+  HasMany, Model, PrimaryKey, Table
 } from "sequelize-typescript";
-import { ReportItem } from "../report-item/report-item.model";
 import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
+import { ReportItem } from "../report-item/report-item.model";
 
 export type IReport = {
   id?: number;

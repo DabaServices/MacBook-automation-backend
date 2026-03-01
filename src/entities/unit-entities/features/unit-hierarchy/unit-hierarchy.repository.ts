@@ -138,16 +138,16 @@ export class UnitHierarchyRepository {
     });
   }
 
-  async isUnitUnderScreenUnit(
+  async isUnitUnderRootUnit(
     date: string,
-    screenUnitId: number,
+    rootUnitId: number,
     lowerUnitId: number,
     transaction?: Transaction
   ) {
-    if (screenUnitId === lowerUnitId) return true;
+    if (rootUnitId === lowerUnitId) return true;
 
-    const visited = new Set<number>([screenUnitId]);
-    let frontier = [screenUnitId];
+    const visited = new Set<number>([rootUnitId]);
+    let frontier = [rootUnitId];
 
     while (frontier.length > 0) {
       const relations = await this.unitRelationModel.findAll({

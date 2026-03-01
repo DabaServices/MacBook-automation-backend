@@ -3,7 +3,7 @@ import { InjectModel } from "@nestjs/sequelize";
 import { isEmpty } from "remeda";
 import { col, Op, where } from "sequelize";
 import { Sequelize } from "sequelize-typescript";
-import { RECORD_STATUS, REPORT_TYPES, UNIT_RELATION_TYPES } from "src/contants";
+import { RECORD_STATUS, REPORT_TYPES, UNIT_RELATION_TYPES, UNIT_STATUSES } from "src/contants";
 import { MainCategory } from "src/entities/material-entities/categories/categories.model";
 import { MaterialCategory } from "src/entities/material-entities/material-category/material-category.model";
 import { MaterialNickname } from "src/entities/material-entities/material-nickname/material-nickname.model";
@@ -13,6 +13,9 @@ import { IReportItem, ReportItem } from "../report-item/report-item.model";
 import { Stock } from "../stock/stock.model";
 import { IReport, Report } from "./report.model";
 import { ReportChanges } from "./report.types";
+import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
+import { Unit } from "src/entities/unit-entities/unit/unit.model";
+import { UnitStatus } from "src/entities/unit-entities/units-statuses/units-statuses.model";
 
 @Injectable()
 export class ReportRepository {
@@ -56,10 +59,6 @@ export class ReportRepository {
         }
     }
 
-    upsertReports(reportChanges: ReportChanges): Promise<void> {
-        return this.saveReports(reportChanges);
-    }
-
     async fetchParentUnits(date: Date, childUnitIds: number[]): Promise<Map<number, number>> {
         if (childUnitIds.length === 0) return new Map<number, number>();
 
@@ -95,18 +94,30 @@ export class ReportRepository {
         while (units.length > 0) {
             const relations = await this.unitRelationModel.findAll({
                 attributes: ["unitId", "relatedUnitId"],
+                include: [{
+                    model: UnitId,
+                    as: "relatedUnit",
+                    required: true,
+                    include: [{
+                        model: UnitStatus,
+                        required: true,
+                        where: {
+                            unitStatusId: { [Op.ne]: UNIT_STATUSES.REQUESTING },
+                        },
+                    }]
+                }],
                 where: {
                     unitRelationId: UNIT_RELATION_TYPES.ZRA,
                     unitId: { [Op.in]: units },
                     startDate: { [Op.lte]: date },
                     endDate: { [Op.gt]: date }
-                }
+                },
             });
-
             const next: number[] = [];
 
             for (const relation of relations) {
                 const childId = relation.relatedUnitId;
+
                 if (!visited.has(childId)) {
                     visited.add(childId);
                     parentByChild.set(childId, relation.unitId);
@@ -136,7 +147,11 @@ export class ReportRepository {
                 createdOn: date,
                 reportTypeId: { [Op.in]: [REPORT_TYPES.REQUEST, REPORT_TYPES.INVENTORY, REPORT_TYPES.USAGE] }
             },
-            include: this.buildReportsInclude(date, material),
+            include: this.buildReportsInclude(
+                date,
+                material,
+                [RECORD_STATUS.ACTIVE, RECORD_STATUS.INACTIVE]
+            ),
         });
     }
 
@@ -157,7 +172,11 @@ export class ReportRepository {
         });
     }
 
-    private buildReportsInclude(date: string, material: string | undefined = '') {
+    private buildReportsInclude(
+        date: string,
+        material: string | undefined = '',
+        itemStatuses: string[] = [RECORD_STATUS.ACTIVE]
+    ) {
         return [{
             association: "unit",
             required: false,
@@ -222,18 +241,8 @@ export class ReportRepository {
                             where(col("items->material->comments.date"), Op.eq, col("Report.created_on")),
                             {
                                 [Op.or]: [
-                                    {
-                                        [Op.and]: [
-                                            where(col("items->material->comments.unit_id"), Op.eq, col("Report.unit_id")),
-                                            where(col("items->material->comments.recipient_unit_id"), Op.eq, col("Report.recipient_unit_id")),
-                                        ],
-                                    },
-                                    {
-                                        [Op.and]: [
-                                            where(col("items->material->comments.unit_id"), Op.eq, col("Report.recipient_unit_id")),
-                                            where(col("items->material->comments.recipient_unit_id"), Op.eq, col("Report.unit_id")),
-                                        ],
-                                    }
+                                    where(col("items->material->comments.unit_id"), Op.eq, col("Report.unit_id")),
+                                    where(col("items->material->comments.unit_id"), Op.eq, col("Report.recipient_unit_id")),
                                 ]
                             }
                         ]
@@ -261,7 +270,7 @@ export class ReportRepository {
                                              WHERE "report_items"."report_id" = "Report"."id"
                                                AND "report_items"."material_id" = "items"."material_id" )`)
                 },
-                status: RECORD_STATUS.ACTIVE
+                status: { [Op.in]: itemStatuses }
             }
         }];
     }

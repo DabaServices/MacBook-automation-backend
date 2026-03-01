@@ -7,7 +7,7 @@ import { UnitRelation } from "../../unit-relations/unit-relation.model";
 import { RemoveUnitRelationDto } from "./DTO/remove-unit-relation.dto";
 import { AddUnitRelationDto } from "./DTO/add-unit-relation.dto";
 import { TransferUnitRelationDto } from "./DTO/update-unit-relation.dto";
-import { MESSAGE_TYPES } from "src/contants";
+import { MESSAGE_TYPES, UNIT_STATUSES } from "src/contants";
 import { Unit } from "../../unit/unit.model";
 import { UnitStatus } from "../../units-statuses/units-statuses.model";
 import { UnitStatusTypesRepository } from "../../units-statuses/units-statuses.repository";
@@ -15,15 +15,14 @@ import { ReportRoutingRepository } from "src/entities/report-entities/report/rep
 import { formatDate } from "src/utils/date";
 
 const DEFAULT_STATUS = { id: 0, description: "בדיווח" };
-const REQUESTING_STATUS = 0;
 const DATE_MISMATCH_ERROR = "לא ניתן לבצע שינוי היררכי על ימים עברו";
 const REMOVE_PARENT_LOCKED_ERROR = "יחידה האב נעולה, אין אפשרות למחוק את הקשר";
 const TRANSFER_PARENT_LOCKED_ERROR = "יחידה האב נעולה, אין אפשרות להעביר את הקשר";
 const SELF_RELATION_ERROR = "לא ניתן לקשר יחידה לעצמה";
-const NOT_UNDER_SCREEN_UNIT_ERROR = "היחידה שניסית להעביר אינה תחתייך";
+const NOT_UNDER_ROOT_UNIT_ERROR = "היחידה שניסית להעביר אינה תחתייך";
 const LOWER_LEVEL_ERROR = "לא ניתן להוסיף יחידה לרמה היררכית נמוכה ממנה";
-const CREATE_UPPER_NOT_UNDER_SCREEN_UNIT_ERROR = "היחידה אליה ניסית להוסיף קשר, אינה תחתייך";
-const TRANSFER_UPPER_NOT_UNDER_SCREEN_UNIT_ERROR = "היחידה אליה ניסית להעביר את הקשר, אינה תחתייך";
+const CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR = "היחידה אליה ניסית להוסיף קשר, אינה תחתייך";
+const TRANSFER_UPPER_NOT_UNDER_ROOT_UNIT_ERROR = "היחידה אליה ניסית להעביר את הקשר, אינה תחתייך";
 const LOWER_UNIT_HAS_ANOTHER_ACTIVE_RELATION_ERROR = "החידה שניסית להוסיף מקושרת ליחידה אחרת";
 const RELATION_ALREADY_EXISTS_ERROR = "הקשר כבר קיים";
 const ADD_PARENT_LOCKED_ERROR = "יחידת האב נעולה, אין אפשרות ליצור את הקשר";
@@ -181,7 +180,6 @@ export class UnitHierarchyService {
   async removeUnitRelation(
     removeUnitRelationDto: RemoveUnitRelationDto,
     date: string,
-    screenUnitId: number | null
   ) {
     const { formattedDate } = formatDate(new Date());
 
@@ -196,17 +194,17 @@ export class UnitHierarchyService {
     const transaction = await this.sequelize.transaction();
 
     try {
-      if (screenUnitId !== null) {
-        const isUnderScreenUnit = await this.repository.isUnitUnderScreenUnit(
+      if (removeUnitRelationDto.rootUnit !== null) {
+        const isUnderRootUnit = await this.repository.isUnitUnderRootUnit(
           formattedDate,
-          screenUnitId,
+          removeUnitRelationDto.rootUnit,
           lowerUnit,
           transaction
         );
 
-        if (!isUnderScreenUnit) {
+        if (!isUnderRootUnit) {
           throw new BadRequestException({
-            message: NOT_UNDER_SCREEN_UNIT_ERROR,
+            message: NOT_UNDER_ROOT_UNIT_ERROR,
             type: MESSAGE_TYPES.FAILURE
           });
         }
@@ -230,9 +228,9 @@ export class UnitHierarchyService {
         formattedDate,
         transaction
       );
-      const parentStatusId = parentUnitStatus?.unitStatusId ?? REQUESTING_STATUS;
+      const parentStatusId = parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
 
-      if (parentStatusId !== REQUESTING_STATUS) {
+      if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
         throw new BadRequestException({
           message: REMOVE_PARENT_LOCKED_ERROR,
           type: MESSAGE_TYPES.FAILURE
@@ -272,7 +270,6 @@ export class UnitHierarchyService {
   async addUnitRelation(
     addUnitRelationDto: AddUnitRelationDto,
     date: string,
-    screenUnitId: number | null,
     username: string
   ) {
     const { formattedDate } = formatDate(new Date());
@@ -295,23 +292,23 @@ export class UnitHierarchyService {
     const transaction = await this.sequelize.transaction();
 
     try {
-      if (screenUnitId === null) {
+      if (addUnitRelationDto.rootUnit === null) {
         throw new BadRequestException({
-          message: CREATE_UPPER_NOT_UNDER_SCREEN_UNIT_ERROR,
+          message: CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
           type: MESSAGE_TYPES.FAILURE
         });
       }
 
-      const isUpperUnitUnderScreenUnit = await this.repository.isUnitUnderScreenUnit(
+      const isUpperUnitUnderRootUnit = await this.repository.isUnitUnderRootUnit(
         formattedDate,
-        screenUnitId,
+        addUnitRelationDto.rootUnit,
         upperUnit,
         transaction
       );
 
-      if (!isUpperUnitUnderScreenUnit) {
+      if (!isUpperUnitUnderRootUnit) {
         throw new BadRequestException({
-          message: CREATE_UPPER_NOT_UNDER_SCREEN_UNIT_ERROR,
+          message: CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
           type: MESSAGE_TYPES.FAILURE
         });
       }
@@ -347,9 +344,9 @@ export class UnitHierarchyService {
         formattedDate,
         transaction
       );
-      const parentStatusId = parentUnitStatus?.unitStatusId ?? REQUESTING_STATUS;
+      const parentStatusId = parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
 
-      if (parentStatusId !== REQUESTING_STATUS) {
+      if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
         throw new BadRequestException({
           message: ADD_PARENT_LOCKED_ERROR,
           type: MESSAGE_TYPES.FAILURE
@@ -396,7 +393,7 @@ export class UnitHierarchyService {
         lowerUnit,
         formattedDate,
         upperUnit,
-        screenUnitId,
+        addUnitRelationDto.rootUnit,
         username,
         transaction
       );
@@ -413,7 +410,6 @@ export class UnitHierarchyService {
   async transferUnitRelation(
     transferUnitRelationDto: TransferUnitRelationDto,
     date: string,
-    screenUnitId: number,
     username: string
   ) {
     const { formattedDate } = formatDate(new Date());
@@ -436,31 +432,31 @@ export class UnitHierarchyService {
     const transaction = await this.sequelize.transaction();
 
     try {
-      const [isLowerUnderScreenUnit, isUpperUnitUnderScreenUnit] = await Promise.all([
-        this.repository.isUnitUnderScreenUnit(
+      const [isLowerUnderRootUnit, isUpperUnitUnderRootUnit] = await Promise.all([
+        this.repository.isUnitUnderRootUnit(
           formattedDate,
-          screenUnitId,
+          transferUnitRelationDto.rootUnit,
           lowerUnit,
           transaction
         ),
-        this.repository.isUnitUnderScreenUnit(
+        this.repository.isUnitUnderRootUnit(
           formattedDate,
-          screenUnitId,
+          transferUnitRelationDto.rootUnit,
           upperUnit,
           transaction
         ),
       ]);
 
-      if (!isLowerUnderScreenUnit) {
+      if (!isLowerUnderRootUnit) {
         throw new BadRequestException({
-          message: NOT_UNDER_SCREEN_UNIT_ERROR,
+          message: NOT_UNDER_ROOT_UNIT_ERROR,
           type: MESSAGE_TYPES.FAILURE
         });
       }
 
-      if (!isUpperUnitUnderScreenUnit) {
+      if (!isUpperUnitUnderRootUnit) {
         throw new BadRequestException({
-          message: TRANSFER_UPPER_NOT_UNDER_SCREEN_UNIT_ERROR,
+          message: TRANSFER_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
           type: MESSAGE_TYPES.FAILURE
         });
       }
@@ -484,9 +480,9 @@ export class UnitHierarchyService {
           formattedDate,
           transaction
         );
-        const currentParentStatusId = currentParentUnitStatus?.unitStatusId ?? REQUESTING_STATUS;
+        const currentParentStatusId = currentParentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
 
-        if (currentParentStatusId !== REQUESTING_STATUS) {
+        if (currentParentStatusId !== UNIT_STATUSES.REQUESTING) {
           throw new BadRequestException({
             message: TRANSFER_PARENT_LOCKED_ERROR,
             type: MESSAGE_TYPES.FAILURE
@@ -499,9 +495,9 @@ export class UnitHierarchyService {
         formattedDate,
         transaction
       );
-      const parentStatusId = parentUnitStatus?.unitStatusId ?? REQUESTING_STATUS;
+      const parentStatusId = parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
 
-      if (parentStatusId !== REQUESTING_STATUS) {
+      if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
         throw new BadRequestException({
           message: ADD_PARENT_LOCKED_ERROR,
           type: MESSAGE_TYPES.FAILURE
@@ -557,7 +553,7 @@ export class UnitHierarchyService {
         lowerUnit,
         formattedDate,
         upperUnit,
-        screenUnitId,
+        transferUnitRelationDto.rootUnit,
         username,
         transaction
       );

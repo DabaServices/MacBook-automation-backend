@@ -1,6 +1,4 @@
 import type { Material } from "src/entities/material-entities/material/material.model";
-import type { Comment } from "src/entities/report-entities/comment/comment.model";
-import type { ReportItem } from "src/entities/report-entities/report-item/report-item.model";
 import type { Report } from "src/entities/report-entities/report/report.model";
 import type { Unit } from "src/entities/unit-entities/unit/unit.model";
 import type {
@@ -11,6 +9,7 @@ import type {
     UnitDto,
     UnitStatusDto,
 } from "../report.types";
+import { REPORT_TYPES } from "src/contants";
 
 type FetchReportsParams = {
     recipientUnitId: number;
@@ -20,9 +19,12 @@ type FetchReportsParams = {
 type ReportItemAggregate = {
     materialId: string;
     unitId: number;
-    createdOn: Date;
     unit: UnitDto;
     type: ReportItemTypeDto;
+};
+
+type MaterialCommentAggregate = {
+    comment: string;
 };
 
 const DEFAULT_STATUS: UnitStatusDto = {
@@ -60,31 +62,12 @@ const buildMaterialDto = (materialId: string, material?: Material): MaterialDto 
     unitOfMeasure: material?.unitOfMeasurement ?? "",
 });
 
-const findComment = (report: Report, item: ReportItem): string => {
-    const comments = item.material?.comments ?? [];
-    const direct = comments.find((comment: Comment) =>
-        comment.unitId === report.unitId &&
-        comment.recipientUnitId === report.recipientUnitId &&
-        comment.type === report.reportTypeId &&
-        comment.materialId === item.materialId
-    );
-    if (direct) return direct.text ?? "";
-
-    const reverse = comments.find((comment: Comment) =>
-        comment.unitId === report.recipientUnitId &&
-        comment.recipientUnitId === report.unitId &&
-        comment.type === report.reportTypeId &&
-        comment.materialId === item.materialId
-    );
-
-    return reverse?.text ?? "";
-};
-
 export const buildReportsResponse = ({ recipientUnitId, reports }: FetchReportsParams): ReportDto[] => {
     if (!reports?.length) return [];
 
     const materialById = new Map<string, MaterialDto>();
     const itemByKey = new Map<string, ReportItemAggregate>();
+    const unitCommentByMaterial = new Map<string, MaterialCommentAggregate>();
 
     for (const report of reports) {
         const unitDetail = report.unit?.details?.[0];
@@ -114,23 +97,21 @@ export const buildReportsResponse = ({ recipientUnitId, reports }: FetchReportsP
                 materialById.set(item.materialId, buildMaterialDto(item.materialId, item.material));
             }
 
-            const createdOn = report.createdOn ?? new Date(0);
             const key = `${report.unitId}:${item.materialId}:${report.reportTypeId}:${report.recipientUnitId ?? 0}`;
-            const existing = itemByKey.get(key);
-            if (existing && existing.createdOn >= createdOn) continue;
 
-            itemByKey.set(key, {
-                materialId: item.materialId,
-                unitId: report.unitId,
-                createdOn,
-                unit: reportingUnit,
-                type: {
-                    id: report.reportTypeId,
-                    quantity: toNumber(item.confirmedQuantity),
-                    comment: findComment(report, item),
-                    status: item.status ?? null,
-                },
-            });
+            if (toNumber(item.confirmedQuantity) !== 0 || report.reportTypeId !== REPORT_TYPES.REQUEST) {
+                itemByKey.set(key, {
+                    materialId: item.materialId,
+                    unitId: report.unitId,
+                    unit: reportingUnit,
+                    type: {
+                        id: report.reportTypeId,
+                        quantity: toNumber(item.confirmedQuantity),
+                        comment: '',
+                        status: item.status ?? null,
+                    },
+                });
+            }
         }
     }
 
@@ -163,7 +144,7 @@ export const buildReportsResponse = ({ recipientUnitId, reports }: FetchReportsP
 
         result.push({
             material,
-            comment: "",
+            comment: unitCommentByMaterial.get(materialId)?.comment ?? "",
             allocatedQuantity: null,
             items,
         });
@@ -171,4 +152,3 @@ export const buildReportsResponse = ({ recipientUnitId, reports }: FetchReportsP
 
     return result.sort((a, b) => a.material.id.localeCompare(b.material.id));
 };
-
