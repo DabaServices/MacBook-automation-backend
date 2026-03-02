@@ -152,3 +152,6 @@ export const buildReportsResponse = ({ recipientUnitId, reports }: FetchReportsP
 
     return result.sort((a, b) => a.material.id.localeCompare(b.material.id));
 };
+
+export const buildReportsMaterialsResponse = (params: FetchReportsParams): ReportDto[] =>
+    buildReportsResponse(params);

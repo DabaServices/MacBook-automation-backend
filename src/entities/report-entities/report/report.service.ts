@@ -2,7 +2,7 @@ import { BadGatewayException, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Op } from "sequelize";
 import { Sequelize } from "sequelize-typescript";
-import { MESSAGE_TYPES } from "src/contants";
+import { MESSAGE_TYPES, RECORD_STATUS } from "src/contants";
 import { UnitHierarchyService } from "src/entities/unit-entities/features/unit-hierarchy/unit-hierarchy.service";
 import { UnitRelation } from "src/entities/unit-entities/unit-relations/unit-relation.model";
 import { Unit } from "src/entities/unit-entities/unit/unit.model";
@@ -10,6 +10,7 @@ import { formatDate } from "src/utils/date";
 import { ReportRepository } from "./report.repository";
 import {
     AggregateReportsDTO,
+    MaterialDto,
     ReportDto,
     SaveReportsBody,
 } from "./report.types";
@@ -23,7 +24,7 @@ import {
     getAggregatedReports,
     sortNumeric,
 } from "./utilities/report-aggregate-hierarchy.utils";
-import { buildReportsResponse } from "./utilities/report-fetch.utils";
+import { buildReportsMaterialsResponse, buildReportsResponse } from "./utilities/report-fetch.utils";
 import { buildReportsToSave } from "./utilities/report-save.utils";
 
 @Injectable()
@@ -103,6 +104,38 @@ export class ReportService {
             recipientUnitId,
             reports,
         });
+    }
+
+    async fetchFavoriteReports(date: string, recipientUnitId: number): Promise<ReportDto[]> {
+        const reports = await this.repository.fetchFavoriteReportsData(date, recipientUnitId);
+
+        return buildReportsResponse({
+            recipientUnitId,
+            reports,
+        });
+    }
+
+    async fetchMostRecentMaterials(date: string, recipientUnitId: number) {
+        try {
+
+            const reports = await this.repository.fetchMostRecentReportsData(date, recipientUnitId);
+
+            return {
+                data: buildReportsMaterialsResponse({
+                    recipientUnitId,
+                    reports,
+                }),
+                message: 'הבאת המק״טים צלחה',
+                type: MESSAGE_TYPES.SUCCESS
+            };
+        } catch (error) {
+            console.log(error);
+
+            throw new BadGatewayException({
+                message: 'נכשלה הבאת המק״טים מועדה אחרונה',
+                type: MESSAGE_TYPES.FAILURE
+            });
+        }
     }
 
     async aggregateHierarchy(
