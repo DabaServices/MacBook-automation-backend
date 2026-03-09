@@ -1,17 +1,9 @@
-import { Body, Controller, Delete, Post, Req } from "@nestjs/common";
+import { Controller, Delete, Query, Req } from "@nestjs/common";
 import { UnitStatusTypesService } from "./units-statuses.service";
-import { UpdateUnitStatus } from "./DTO/updateUnitStatus";
 
 @Controller('statuses')
 export class UnitStatusTypesController {
     constructor(private readonly service: UnitStatusTypesService) { }
-
-    @Post('')
-    updateHierarchyStatuses(@Body() unitsStatuses: UpdateUnitStatus,
-        @Req() request) {
-        return this.service.updateHierarchyStatuses(unitsStatuses, request?.['date']);
-    }
-
     /**
      * DELETE /statuses/reset
      *
@@ -24,7 +16,7 @@ export class UnitStatusTypesController {
      *   401 – missing screendate header (handled by HeadersMiddleware)
      */
     @Delete('reset')
-    resetAllStatuses(@Req() request) {
-        return this.service.resetAllStatusesForDate(request?.['date']);
+    resetAllStatuses(@Query('date') date: string) {
+        return this.service.resetAllStatusesForDate(date);
     }
 }

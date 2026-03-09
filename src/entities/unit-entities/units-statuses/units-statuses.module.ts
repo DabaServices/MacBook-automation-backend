@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { SequelizeModule } from "@nestjs/sequelize";
-import { UnitStatus } from "./units-statuses.model";
 import { UnitStatusTypesController } from "./units-statuses.controller";
-import { UnitStatusTypesService } from "./units-statuses.service";
+import { UnitStatus } from "./units-statuses.model";
 import { UnitStatusTypesRepository } from "./units-statuses.repository";
+import { UnitStatusTypesService } from "./units-statuses.service";
 import { UnitRelation } from "../unit-relations/unit-relation.model";
 
 @Module({

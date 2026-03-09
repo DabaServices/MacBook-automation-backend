@@ -53,7 +53,7 @@ export class UnitStatusTypesRepository {
     updateStatuses(unitsStatuses: IUnitStatus[]) {
         return this.unitStatusHistoryModel.bulkCreate(unitsStatuses, {
             updateOnDuplicate: ['unitStatusId'],
-        })
+        });
     }
 
     clearStatusesForUnitsDate(unitIds: number[], date: string, transaction?: Transaction) {

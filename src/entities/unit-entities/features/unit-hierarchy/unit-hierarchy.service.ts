@@ -269,12 +269,10 @@ export class UnitHierarchyService {
 
   async addUnitRelation(
     addUnitRelationDto: AddUnitRelationDto,
-    date: string,
-    username: string
   ) {
     const { formattedDate } = formatDate(new Date());
 
-    if (date !== formattedDate) {
+    if (addUnitRelationDto.date !== formattedDate) {
       throw new BadRequestException({
         message: DATE_MISMATCH_ERROR,
         type: MESSAGE_TYPES.FAILURE
@@ -394,7 +392,7 @@ export class UnitHierarchyService {
         formattedDate,
         upperUnit,
         addUnitRelationDto.rootUnit,
-        username,
+        addUnitRelationDto.username,
         transaction
       );
 
