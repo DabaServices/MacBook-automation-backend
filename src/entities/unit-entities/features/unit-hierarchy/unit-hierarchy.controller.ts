@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Put, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Post, Put, Query, Req } from "@nestjs/common";
 import { UnitHierarchyService } from "./unit-hierarchy.service";
 import type { Request } from "express";
 import { RemoveUnitRelationDto } from "./DTO/remove-unit-relation.dto";
@@ -10,24 +10,21 @@ export class UnitHierarchyController {
   constructor(private readonly service: UnitHierarchyService) { }
 
   @Get("")
-  async getAllUnits(@Req() request: Request) {
-    return this.service.getAllUnitsWithParents(request?.["date"]);
+  async getAllUnits(@Query('date') date: string) {
+    return this.service.getAllUnitsWithParents(date);
   }
 
   @Get("hierarchy")
-  async getHierarchy(@Req() request: Request) {
-    return this.service.getHierarchyForUser(Number(request?.['unit'] ?? 1), request?.["date"]);
+  async getHierarchy(@Query('date') date: string, @Query('unit') unit: number) {
+    return this.service.getHierarchyForUser(unit, date);
   }
 
   @Post("hierarchy")
   addUnitRelation(
-    @Body() addUnitRelationDto: AddUnitRelationDto,
-    @Req() request: Request
+    @Body() addUnitRelationDto: AddUnitRelationDto
   ) {
     return this.service.addUnitRelation(
-      addUnitRelationDto,
-      request?.["date"],
-      request?.["username"]
+      addUnitRelationDto
     );
   }
 

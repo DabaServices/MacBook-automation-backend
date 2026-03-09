@@ -53,7 +53,7 @@ export class UnitStatusTypesRepository {
     updateStatuses(unitsStatuses: IUnitStatus[]) {
         return this.unitStatusHistoryModel.bulkCreate(unitsStatuses, {
             updateOnDuplicate: ['unitStatusId'],
-        })
+        });
     }
 
     clearStatusesForUnitsDate(unitIds: number[], date: string, transaction?: Transaction) {
@@ -75,6 +75,30 @@ export class UnitStatusTypesRepository {
                 date,
             },
             transaction,
+        });
+    }
+
+    /**
+     * Deletes ALL rows in units_statuses for the given date,
+     * effectively resetting every unit back to status 0 (requesting).
+     * Returns the number of rows destroyed.
+     */
+    resetAllForDate(date: string): Promise<number> {
+        return this.unitStatusHistoryModel.destroy({
+            where: { date: new Date(date) },
+        });
+    }
+
+    /**
+     * Counts rows that still have a non-zero unit_status_id for the given date.
+     * Used to verify a full reset: expected result is 0.
+     */
+    countNonZeroStatusesForDate(date: string): Promise<number> {
+        return this.unitStatusHistoryModel.count({
+            where: {
+                date: new Date(date),
+                unitStatusId: { [Op.ne]: 0 },
+            },
         });
     }
 }
