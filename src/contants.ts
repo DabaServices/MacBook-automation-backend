@@ -1,41 +1,40 @@
 export const ENVIRONMENTS = {
-    NONPROD: 'nonprod',
-    LOCALHOST: 'localhost'
-}
+  NONPROD: 'nonprod',
+  LOCALHOST: 'localhost',
+};
 
 export const RECORD_STATUS = {
-    ACTIVE: 'ACTIVE',
-    INACTIVE: 'INACTIVE'
-}
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+};
 
 export const UNIT_RELATION_TYPES = {
-    ZRA: '1'
-}
-
-export const MESSAGE_TYPES = {
-    FATAL: 'Fatal',
-    FAILURE: 'Failure',
-    SUCCESS: 'Success'
-}
+  ZRA: '1',
+};
 
 export const REPORT_TYPES = {
-    REQUEST: 0,
-    INVENTORY: 1,
-    USAGE: 2,
-    ALLOCATION: 4
-}
+  REQUEST: 0,
+  INVENTORY: 1,
+  USAGE: 2,
+  ALLOCATION: 4,
+};
+
+export const MESSAGE_TYPES = {
+  SUCCESS: 'SUCCESS',
+  FAILURE: 'FAILURE',
+};
 
 export const UNIT_LEVELS = {
-    GDUD: 4,
-    HATIVA: 3,
-    UGDA: 2,
-    PIKUD: 1,
-    MATKAL: 0
-}
+  GDUD: 4,
+  HATIVA: 3,
+  UGDA: 2,
+  PIKUD: 1,
+  MATKAL: 0,
+};
 
 export const UNIT_STATUSES = {
-    REQUESTING: 0,
-    WAITING_FOR_ALLOCATION: 1,
-    ALLOCATING: 2,
-    FINISHED: 3
-}
+  REQUESTING: 0,
+  WAITING_FOR_ALLOCATION: 1,
+  ALLOCATING: 2,
+  FINISHED: 3,
+};

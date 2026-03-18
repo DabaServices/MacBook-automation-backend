@@ -1,5 +1,13 @@
-import { BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table } from "sequelize-typescript";
-import { UnitId } from "../unit-id/unit-id.model";
+import {
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { UnitId } from '../unit-id/unit-id.model';
 
 export type IUnitRelation = {
   unitId: number;
@@ -11,20 +19,20 @@ export type IUnitRelation = {
   endDate: Date;
 };
 
-@Table({ tableName: "units_relations", timestamps: false })
+@Table({ tableName: 'units_relations', timestamps: false })
 export class UnitRelation extends Model<IUnitRelation> {
   @PrimaryKey
   @ForeignKey(() => UnitId)
-  @Column({ field: "unit_id", type: DataType.INTEGER })
+  @Column({ field: 'unit_id', type: DataType.INTEGER })
   declare unitId: number;
 
   @PrimaryKey
   @ForeignKey(() => UnitId)
-  @Column({ field: "related_unit_id", type: DataType.INTEGER })
+  @Column({ field: 'related_unit_id', type: DataType.INTEGER })
   declare relatedUnitId: number;
 
   @PrimaryKey
-  @Column({ field: "unit_relation_id", type: DataType.STRING })
+  @Column({ field: 'unit_relation_id', type: DataType.STRING })
   declare unitRelationId: string;
 
   @PrimaryKey
@@ -36,15 +44,15 @@ export class UnitRelation extends Model<IUnitRelation> {
   declare relatedUnitObjectType: string;
 
   @PrimaryKey
-  @Column({ field: "start_date", type: DataType.DATE })
+  @Column({ field: 'start_date', type: DataType.DATE })
   declare startDate: Date;
 
-  @Column({ field: "end_date", type: DataType.DATE })
+  @Column({ field: 'end_date', type: DataType.DATE })
   declare endDate: Date;
 
-  @BelongsTo(() => UnitId, { foreignKey: "unitId", as: "unit" })
+  @BelongsTo(() => UnitId, { foreignKey: 'unitId', as: 'unit' })
   declare unit?: UnitId;
 
-  @BelongsTo(() => UnitId, { foreignKey: "relatedUnitId", as: "relatedUnit" })
+  @BelongsTo(() => UnitId, { foreignKey: 'relatedUnitId', as: 'relatedUnit' })
   declare relatedUnit?: UnitId;
 }

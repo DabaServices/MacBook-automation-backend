@@ -1,31 +1,39 @@
-import { BadRequestException, Injectable, Logger } from "@nestjs/common";
-import { Sequelize } from "sequelize-typescript";
-import { UnitHierarchyRepository } from "./unit-hierarchy.repository";
-import { UnitHierarchyNode } from "./unit-hierarchy.types";
-import { getEmergencyUnitIds, getHierarchy, getRootUnit } from "./utilities/hierarchyRecursion";
-import { UnitRelation } from "../../unit-relations/unit-relation.model";
-import { RemoveUnitRelationDto } from "./DTO/remove-unit-relation.dto";
-import { AddUnitRelationDto } from "./DTO/add-unit-relation.dto";
-import { TransferUnitRelationDto } from "./DTO/update-unit-relation.dto";
-import { MESSAGE_TYPES, UNIT_STATUSES } from "src/contants";
-import { Unit } from "../../unit/unit.model";
-import { UnitStatus } from "../../units-statuses/units-statuses.model";
-import { UnitStatusTypesRepository } from "../../units-statuses/units-statuses.repository";
-import { ReportRoutingRepository } from "src/entities/report-entities/report/report-routing.repository";
-import { formatDate } from "src/utils/date";
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Sequelize } from 'sequelize-typescript';
+import { UnitHierarchyRepository } from './unit-hierarchy.repository';
+import { UnitHierarchyNode } from './unit-hierarchy.types';
+import {
+  getEmergencyUnitIds,
+  getHierarchy,
+  getRootUnit,
+} from './utilities/hierarchyRecursion';
+import { UnitRelation } from '../../unit-relations/unit-relation.model';
+import { RemoveUnitRelationDto } from './DTO/remove-unit-relation.dto';
+import { AddUnitRelationDto } from './DTO/add-unit-relation.dto';
+import { TransferUnitRelationDto } from './DTO/update-unit-relation.dto';
+import { MESSAGE_TYPES, UNIT_STATUSES } from 'src/contants';
+import { Unit } from '../../unit/unit.model';
+import { UnitStatus } from '../../units-statuses/units-statuses.model';
+import { UnitStatusTypesRepository } from '../../units-statuses/units-statuses.repository';
+import { ReportRoutingRepository } from 'src/entities/report-entities/report/report-routing.repository';
+import { formatDate } from 'src/utils/date';
 
-const DEFAULT_STATUS = { id: 0, description: "בדיווח" };
-const DATE_MISMATCH_ERROR = "לא ניתן לבצע שינוי היררכי על ימים עברו";
-const REMOVE_PARENT_LOCKED_ERROR = "יחידה האב נעולה, אין אפשרות למחוק את הקשר";
-const TRANSFER_PARENT_LOCKED_ERROR = "יחידה האב נעולה, אין אפשרות להעביר את הקשר";
-const SELF_RELATION_ERROR = "לא ניתן לקשר יחידה לעצמה";
-const NOT_UNDER_ROOT_UNIT_ERROR = "היחידה שניסית להעביר אינה תחתייך";
-const LOWER_LEVEL_ERROR = "לא ניתן להוסיף יחידה לרמה היררכית נמוכה ממנה";
-const CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR = "היחידה אליה ניסית להוסיף קשר, אינה תחתייך";
-const TRANSFER_UPPER_NOT_UNDER_ROOT_UNIT_ERROR = "היחידה אליה ניסית להעביר את הקשר, אינה תחתייך";
-const LOWER_UNIT_HAS_ANOTHER_ACTIVE_RELATION_ERROR = "החידה שניסית להוסיף מקושרת ליחידה אחרת";
-const RELATION_ALREADY_EXISTS_ERROR = "הקשר כבר קיים";
-const ADD_PARENT_LOCKED_ERROR = "יחידת האב נעולה, אין אפשרות ליצור את הקשר";
+const DEFAULT_STATUS = { id: 0, description: 'בדיווח' };
+const DATE_MISMATCH_ERROR = 'לא ניתן לבצע שינוי היררכי על ימים עברו';
+const REMOVE_PARENT_LOCKED_ERROR = 'יחידה האב נעולה, אין אפשרות למחוק את הקשר';
+const TRANSFER_PARENT_LOCKED_ERROR =
+  'יחידה האב נעולה, אין אפשרות להעביר את הקשר';
+const SELF_RELATION_ERROR = 'לא ניתן לקשר יחידה לעצמה';
+const NOT_UNDER_ROOT_UNIT_ERROR = 'היחידה שניסית להעביר אינה תחתייך';
+const LOWER_LEVEL_ERROR = 'לא ניתן להוסיף יחידה לרמה היררכית נמוכה ממנה';
+const CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR =
+  'היחידה אליה ניסית להוסיף קשר, אינה תחתייך';
+const TRANSFER_UPPER_NOT_UNDER_ROOT_UNIT_ERROR =
+  'היחידה אליה ניסית להעביר את הקשר, אינה תחתייך';
+const LOWER_UNIT_HAS_ANOTHER_ACTIVE_RELATION_ERROR =
+  'החידה שניסית להוסיף מקושרת ליחידה אחרת';
+const RELATION_ALREADY_EXISTS_ERROR = 'הקשר כבר קיים';
+const ADD_PARENT_LOCKED_ERROR = 'יחידת האב נעולה, אין אפשרות ליצור את הקשר';
 
 @Injectable()
 export class UnitHierarchyService {
@@ -35,38 +43,37 @@ export class UnitHierarchyService {
     private readonly repository: UnitHierarchyRepository,
     private readonly sequelize: Sequelize,
     private readonly unitStatusTypesRepository: UnitStatusTypesRepository,
-    private readonly reportRoutingRepository: ReportRoutingRepository
-  ) { }
+    private readonly reportRoutingRepository: ReportRoutingRepository,
+  ) {}
 
-  async getHierarchyForUser(rootUnit: number, date: string): Promise<UnitHierarchyNode[]> {
+  async getHierarchyForUser(
+    rootUnit: number,
+    date: string,
+  ): Promise<UnitHierarchyNode[]> {
     try {
-      const unitsRelations = await this.repository.fetchActive(date) as UnitRelation[];
+      const unitsRelations = await this.repository.fetchActive(date);
       const emergencyUnitIds = getEmergencyUnitIds(unitsRelations);
 
       const rootChildren = unitsRelations.filter(
-        (relation) => relation?.dataValues?.unitId === rootUnit
+        (relation) => relation?.dataValues?.unitId === rootUnit,
       );
 
       const hierarchy = getHierarchy(
         unitsRelations,
         rootChildren,
-        emergencyUnitIds
+        emergencyUnitIds,
       );
 
-      const rootNode = getRootUnit(
-        unitsRelations,
-        rootUnit,
-        emergencyUnitIds
-      );
+      const rootNode = getRootUnit(unitsRelations, rootUnit, emergencyUnitIds);
 
       const normalized = hierarchy.map((node) => ({
         ...node,
         status: node.status ?? DEFAULT_STATUS,
         parent: node.parent
           ? {
-            ...node.parent,
-            status: node.parent.status ?? DEFAULT_STATUS,
-          }
+              ...node.parent,
+              status: node.parent.status ?? DEFAULT_STATUS,
+            }
           : null,
       }));
 
@@ -81,7 +88,10 @@ export class UnitHierarchyService {
         ...normalized,
       ].sort((a, b) => a.level - b.level);
     } catch (error) {
-      this.logger.error("Failed to fetch hierarchy for user", error instanceof Error ? error.stack : String(error));
+      this.logger.error(
+        'Failed to fetch hierarchy for user',
+        error instanceof Error ? error.stack : String(error),
+      );
       throw error;
     }
   }
@@ -90,7 +100,9 @@ export class UnitHierarchyService {
     const unitDetails = await this.repository.fetchAllActiveUnitDetails(date);
     if (unitDetails.length === 0) return [];
 
-    const uniqueUnitIds = Array.from(new Set(unitDetails.map((detail) => detail.unitId)));
+    const uniqueUnitIds = Array.from(
+      new Set(unitDetails.map((detail) => detail.unitId)),
+    );
     const [unitStatuses, directParentRelations] = await Promise.all([
       this.repository.fetchUnitStatusesForDate(date, uniqueUnitIds),
       this.repository.fetchDirectParentRelations(date, uniqueUnitIds),
@@ -147,24 +159,27 @@ export class UnitHierarchyService {
 
     const units = uniqueUnitIds.map((unitId): UnitHierarchyNode => {
       const detail = detailByUnit.get(unitId);
-      const status = statusByUnit.get(unitId)?.unitStatus?.dataValues ?? DEFAULT_STATUS;
+      const status =
+        statusByUnit.get(unitId)?.unitStatus?.dataValues ?? DEFAULT_STATUS;
       const parentId = parentByChild.get(unitId);
 
       const parent = parentId
         ? {
-          id: parentId,
-          description: detailByUnit.get(parentId)?.description ?? "",
-          level: detailByUnit.get(parentId)?.unitLevelId ?? 0,
-          simul: detailByUnit.get(parentId)?.tsavIrgunCodeId ?? "",
-          status: statusByUnit.get(parentId)?.unitStatus?.dataValues ?? DEFAULT_STATUS,
-        }
+            id: parentId,
+            description: detailByUnit.get(parentId)?.description ?? '',
+            level: detailByUnit.get(parentId)?.unitLevelId ?? 0,
+            simul: detailByUnit.get(parentId)?.tsavIrgunCodeId ?? '',
+            status:
+              statusByUnit.get(parentId)?.unitStatus?.dataValues ??
+              DEFAULT_STATUS,
+          }
         : null;
 
       return {
         id: unitId,
-        description: detail?.description ?? "",
+        description: detail?.description ?? '',
         level: detail?.unitLevelId ?? 0,
-        simul: detail?.tsavIrgunCodeId ?? "",
+        simul: detail?.tsavIrgunCodeId ?? '',
         isEmergencyUnit: emergencyUnitIds.has(unitId),
         status,
         parent,
@@ -186,7 +201,6 @@ export class UnitHierarchyService {
     if (date !== formattedDate) {
       throw new BadRequestException({
         message: DATE_MISMATCH_ERROR,
-        type: MESSAGE_TYPES.FAILURE
       });
     }
 
@@ -199,13 +213,13 @@ export class UnitHierarchyService {
           formattedDate,
           removeUnitRelationDto.rootUnit,
           lowerUnit,
-          transaction
+          transaction,
         );
 
         if (!isUnderRootUnit) {
           throw new BadRequestException({
             message: NOT_UNDER_ROOT_UNIT_ERROR,
-            type: MESSAGE_TYPES.FAILURE
+            type: MESSAGE_TYPES.FAILURE,
           });
         }
       }
@@ -213,69 +227,75 @@ export class UnitHierarchyService {
       const activeRelation = await this.repository.fetchCurrentParentRelation(
         lowerUnit,
         formattedDate,
-        transaction
+        transaction,
       );
 
       if (!activeRelation || activeRelation.unitId !== upperUnit) {
         throw new BadRequestException({
           message: `היחידה ${lowerUnit} כבר לא מקושרת אל היחידה ${upperUnit} יש לרענן את המסך`,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
       const parentUnitStatus = await this.repository.fetchUnitStatusForDate(
         activeRelation.unitId,
         formattedDate,
-        transaction
+        transaction,
       );
-      const parentStatusId = parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
+      const parentStatusId =
+        parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
 
       if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
         throw new BadRequestException({
           message: REMOVE_PARENT_LOCKED_ERROR,
-          type: MESSAGE_TYPES.FAILURE
-        }
-        );
+          type: MESSAGE_TYPES.FAILURE,
+        });
       }
 
-      const hierarchyUnitIds = await this.unitStatusTypesRepository.fetchHierarchyUnitIds(
-        formattedDate,
-        [lowerUnit],
-        transaction
-      );
+      const hierarchyUnitIds =
+        await this.unitStatusTypesRepository.fetchHierarchyUnitIds(
+          formattedDate,
+          [lowerUnit],
+          transaction,
+        );
       await this.unitStatusTypesRepository.clearStatusesForUnitsDate(
         hierarchyUnitIds,
         formattedDate,
-        transaction
+        transaction,
       );
 
-      await this.repository.closeRelationOnDate(activeRelation, formattedDate, transaction);
+      await this.repository.closeRelationOnDate(
+        activeRelation,
+        formattedDate,
+        transaction,
+      );
       await this.reportRoutingRepository.rerouteUnitReportsToParentForDate(
         lowerUnit,
         formattedDate,
         null,
         null,
         null,
-        transaction
+        transaction,
       );
 
       await transaction.commit();
-      return { message: "הקשר ההיררכי הוסר בהצלחה", type: MESSAGE_TYPES.SUCCESS };
+      return {
+        message: 'הקשר ההיררכי הוסר בהצלחה',
+        type: MESSAGE_TYPES.SUCCESS,
+      };
     } catch (error) {
       await transaction.rollback();
       throw error;
     }
   }
 
-  async addUnitRelation(
-    addUnitRelationDto: AddUnitRelationDto,
-  ) {
+  async addUnitRelation(addUnitRelationDto: AddUnitRelationDto) {
     const { formattedDate } = formatDate(new Date());
 
     if (addUnitRelationDto.date !== formattedDate) {
       throw new BadRequestException({
         message: DATE_MISMATCH_ERROR,
-        type: MESSAGE_TYPES.FAILURE
+        type: MESSAGE_TYPES.FAILURE,
       });
     }
 
@@ -283,7 +303,7 @@ export class UnitHierarchyService {
     if (lowerUnit === upperUnit) {
       throw new BadRequestException({
         message: SELF_RELATION_ERROR,
-        type: MESSAGE_TYPES.FAILURE
+        type: MESSAGE_TYPES.FAILURE,
       });
     }
 
@@ -293,34 +313,35 @@ export class UnitHierarchyService {
       if (addUnitRelationDto.rootUnit === null) {
         throw new BadRequestException({
           message: CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
-      const isUpperUnitUnderRootUnit = await this.repository.isUnitUnderRootUnit(
-        formattedDate,
-        addUnitRelationDto.rootUnit,
-        upperUnit,
-        transaction
-      );
+      const isUpperUnitUnderRootUnit =
+        await this.repository.isUnitUnderRootUnit(
+          formattedDate,
+          addUnitRelationDto.rootUnit,
+          upperUnit,
+          transaction,
+        );
 
       if (!isUpperUnitUnderRootUnit) {
         throw new BadRequestException({
           message: CREATE_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
       const activeRelation = await this.repository.fetchCurrentParentRelation(
         lowerUnit,
         formattedDate,
-        transaction
+        transaction,
       );
 
       if (activeRelation?.unitId === upperUnit) {
         throw new BadRequestException({
           message: RELATION_ALREADY_EXISTS_ERROR,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
@@ -333,179 +354,29 @@ export class UnitHierarchyService {
       if (hasOpenRelationWithAnotherUnit) {
         throw new BadRequestException({
           message: LOWER_UNIT_HAS_ANOTHER_ACTIVE_RELATION_ERROR,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
       const parentUnitStatus = await this.repository.fetchUnitStatusForDate(
         upperUnit,
         formattedDate,
-        transaction
+        transaction,
       );
-      const parentStatusId = parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
+      const parentStatusId =
+        parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
 
       if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
         throw new BadRequestException({
           message: ADD_PARENT_LOCKED_ERROR,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
       const details = await this.repository.fetchUnitsActiveDetails(
         formattedDate,
         [upperUnit, lowerUnit],
-        transaction
-      );
-
-      const detailsByUnit = new Map<number, number>();
-      for (const detail of details) {
-        if (!detailsByUnit.has(detail.unitId)) {
-          detailsByUnit.set(detail.unitId, detail.unitLevelId)
-        }
-      }
-
-      const upperUnitLevel = detailsByUnit.get(upperUnit) ?? 0;
-      const lowerUnitLevel = detailsByUnit.get(lowerUnit) ?? 0;
-
-      if (
-        upperUnitLevel > lowerUnitLevel
-      ) {
-        throw new BadRequestException({
-          message: LOWER_LEVEL_ERROR,
-          type: MESSAGE_TYPES.FAILURE
-        });
-      }
-
-      if (activeRelation) {
-        await this.repository.closeRelationOnDate(activeRelation, formattedDate, transaction);
-      }
-
-      await this.repository.createParentRelation(
-        upperUnit,
-        lowerUnit,
-        formattedDate,
-        transaction
-      );
-
-      await this.reportRoutingRepository.rerouteUnitReportsToParentForDate(
-        lowerUnit,
-        formattedDate,
-        upperUnit,
-        addUnitRelationDto.rootUnit,
-        addUnitRelationDto.username,
-        transaction
-      );
-
-      await transaction.commit();
-      return { message: "הקשר ההיררכי נוסף בהצלחה", type: MESSAGE_TYPES.SUCCESS };
-    } catch (error) {
-      this.logger.error("Failed to add unit relation", error instanceof Error ? error.stack : String(error));
-      await transaction.rollback();
-      throw error;
-    }
-  }
-
-  async transferUnitRelation(
-    transferUnitRelationDto: TransferUnitRelationDto,
-    date: string,
-    username: string
-  ) {
-    const { formattedDate } = formatDate(new Date());
-
-    if (date !== formattedDate) {
-      throw new BadRequestException({
-        message: DATE_MISMATCH_ERROR,
-        type: MESSAGE_TYPES.FAILURE
-      });
-    }
-
-    const { lowerUnit, upperUnit } = transferUnitRelationDto;
-    if (lowerUnit === upperUnit) {
-      throw new BadRequestException({
-        message: SELF_RELATION_ERROR,
-        type: MESSAGE_TYPES.FAILURE
-      });
-    }
-
-    const transaction = await this.sequelize.transaction();
-
-    try {
-      const [isLowerUnderRootUnit, isUpperUnitUnderRootUnit] = await Promise.all([
-        this.repository.isUnitUnderRootUnit(
-          formattedDate,
-          transferUnitRelationDto.rootUnit,
-          lowerUnit,
-          transaction
-        ),
-        this.repository.isUnitUnderRootUnit(
-          formattedDate,
-          transferUnitRelationDto.rootUnit,
-          upperUnit,
-          transaction
-        ),
-      ]);
-
-      if (!isLowerUnderRootUnit) {
-        throw new BadRequestException({
-          message: NOT_UNDER_ROOT_UNIT_ERROR,
-          type: MESSAGE_TYPES.FAILURE
-        });
-      }
-
-      if (!isUpperUnitUnderRootUnit) {
-        throw new BadRequestException({
-          message: TRANSFER_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
-          type: MESSAGE_TYPES.FAILURE
-        });
-      }
-
-      const activeRelation = await this.repository.fetchCurrentParentRelation(
-        lowerUnit,
-        formattedDate,
-        transaction
-      );
-
-      if (activeRelation?.unitId === upperUnit) {
-        throw new BadRequestException({
-          message: RELATION_ALREADY_EXISTS_ERROR,
-          type: MESSAGE_TYPES.FAILURE
-        });
-      }
-
-      if (activeRelation) {
-        const currentParentUnitStatus = await this.repository.fetchUnitStatusForDate(
-          activeRelation.unitId,
-          formattedDate,
-          transaction
-        );
-        const currentParentStatusId = currentParentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
-
-        if (currentParentStatusId !== UNIT_STATUSES.REQUESTING) {
-          throw new BadRequestException({
-            message: TRANSFER_PARENT_LOCKED_ERROR,
-            type: MESSAGE_TYPES.FAILURE
-          });
-        }
-      }
-
-      const parentUnitStatus = await this.repository.fetchUnitStatusForDate(
-        upperUnit,
-        formattedDate,
-        transaction
-      );
-      const parentStatusId = parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
-
-      if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
-        throw new BadRequestException({
-          message: ADD_PARENT_LOCKED_ERROR,
-          type: MESSAGE_TYPES.FAILURE
-        });
-      }
-
-      const details = await this.repository.fetchUnitsActiveDetails(
-        formattedDate,
-        [upperUnit, lowerUnit],
-        transaction
+        transaction,
       );
 
       const detailsByUnit = new Map<number, number>();
@@ -521,30 +392,198 @@ export class UnitHierarchyService {
       if (upperUnitLevel > lowerUnitLevel) {
         throw new BadRequestException({
           message: LOWER_LEVEL_ERROR,
-          type: MESSAGE_TYPES.FAILURE
+          type: MESSAGE_TYPES.FAILURE,
         });
       }
 
       if (activeRelation) {
-        await this.repository.closeRelationOnDate(activeRelation, formattedDate, transaction);
+        await this.repository.closeRelationOnDate(
+          activeRelation,
+          formattedDate,
+          transaction,
+        );
       }
 
       await this.repository.createParentRelation(
         upperUnit,
         lowerUnit,
         formattedDate,
-        transaction
+        transaction,
       );
 
-      const hierarchyUnitIds = await this.unitStatusTypesRepository.fetchHierarchyUnitIds(
+      await this.reportRoutingRepository.rerouteUnitReportsToParentForDate(
+        lowerUnit,
         formattedDate,
-        [lowerUnit],
-        transaction
+        upperUnit,
+        addUnitRelationDto.rootUnit,
+        addUnitRelationDto.username,
+        transaction,
       );
+
+      await transaction.commit();
+      return {
+        message: 'הקשר ההיררכי נוסף בהצלחה',
+        type: MESSAGE_TYPES.SUCCESS,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Failed to add unit relation',
+        error instanceof Error ? error.stack : String(error),
+      );
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  async transferUnitRelation(
+    transferUnitRelationDto: TransferUnitRelationDto,
+    date: string,
+    username: string,
+  ) {
+    const { formattedDate } = formatDate(new Date());
+
+    if (date !== formattedDate) {
+      throw new BadRequestException({
+        message: DATE_MISMATCH_ERROR,
+        type: MESSAGE_TYPES.FAILURE,
+      });
+    }
+
+    const { lowerUnit, upperUnit } = transferUnitRelationDto;
+    if (lowerUnit === upperUnit) {
+      throw new BadRequestException({
+        message: SELF_RELATION_ERROR,
+        type: MESSAGE_TYPES.FAILURE,
+      });
+    }
+
+    const transaction = await this.sequelize.transaction();
+
+    try {
+      const [isLowerUnderRootUnit, isUpperUnitUnderRootUnit] =
+        await Promise.all([
+          this.repository.isUnitUnderRootUnit(
+            formattedDate,
+            transferUnitRelationDto.rootUnit,
+            lowerUnit,
+            transaction,
+          ),
+          this.repository.isUnitUnderRootUnit(
+            formattedDate,
+            transferUnitRelationDto.rootUnit,
+            upperUnit,
+            transaction,
+          ),
+        ]);
+
+      if (!isLowerUnderRootUnit) {
+        throw new BadRequestException({
+          message: NOT_UNDER_ROOT_UNIT_ERROR,
+          type: MESSAGE_TYPES.FAILURE,
+        });
+      }
+
+      if (!isUpperUnitUnderRootUnit) {
+        throw new BadRequestException({
+          message: TRANSFER_UPPER_NOT_UNDER_ROOT_UNIT_ERROR,
+          type: MESSAGE_TYPES.FAILURE,
+        });
+      }
+
+      const activeRelation = await this.repository.fetchCurrentParentRelation(
+        lowerUnit,
+        formattedDate,
+        transaction,
+      );
+
+      if (activeRelation?.unitId === upperUnit) {
+        throw new BadRequestException({
+          message: RELATION_ALREADY_EXISTS_ERROR,
+          type: MESSAGE_TYPES.FAILURE,
+        });
+      }
+
+      if (activeRelation) {
+        const currentParentUnitStatus =
+          await this.repository.fetchUnitStatusForDate(
+            activeRelation.unitId,
+            formattedDate,
+            transaction,
+          );
+        const currentParentStatusId =
+          currentParentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
+
+        if (currentParentStatusId !== UNIT_STATUSES.REQUESTING) {
+          throw new BadRequestException({
+            message: TRANSFER_PARENT_LOCKED_ERROR,
+            type: MESSAGE_TYPES.FAILURE,
+          });
+        }
+      }
+
+      const parentUnitStatus = await this.repository.fetchUnitStatusForDate(
+        upperUnit,
+        formattedDate,
+        transaction,
+      );
+      const parentStatusId =
+        parentUnitStatus?.unitStatusId ?? UNIT_STATUSES.REQUESTING;
+
+      if (parentStatusId !== UNIT_STATUSES.REQUESTING) {
+        throw new BadRequestException({
+          message: ADD_PARENT_LOCKED_ERROR,
+          type: MESSAGE_TYPES.FAILURE,
+        });
+      }
+
+      const details = await this.repository.fetchUnitsActiveDetails(
+        formattedDate,
+        [upperUnit, lowerUnit],
+        transaction,
+      );
+
+      const detailsByUnit = new Map<number, number>();
+      for (const detail of details) {
+        if (!detailsByUnit.has(detail.unitId)) {
+          detailsByUnit.set(detail.unitId, detail.unitLevelId);
+        }
+      }
+
+      const upperUnitLevel = detailsByUnit.get(upperUnit) ?? 0;
+      const lowerUnitLevel = detailsByUnit.get(lowerUnit) ?? 0;
+
+      if (upperUnitLevel > lowerUnitLevel) {
+        throw new BadRequestException({
+          message: LOWER_LEVEL_ERROR,
+          type: MESSAGE_TYPES.FAILURE,
+        });
+      }
+
+      if (activeRelation) {
+        await this.repository.closeRelationOnDate(
+          activeRelation,
+          formattedDate,
+          transaction,
+        );
+      }
+
+      await this.repository.createParentRelation(
+        upperUnit,
+        lowerUnit,
+        formattedDate,
+        transaction,
+      );
+
+      const hierarchyUnitIds =
+        await this.unitStatusTypesRepository.fetchHierarchyUnitIds(
+          formattedDate,
+          [lowerUnit],
+          transaction,
+        );
       await this.unitStatusTypesRepository.clearStatusesForUnitsDate(
         hierarchyUnitIds,
         formattedDate,
-        transaction
+        transaction,
       );
 
       await this.reportRoutingRepository.rerouteUnitReportsToParentForDate(
@@ -553,11 +592,14 @@ export class UnitHierarchyService {
         upperUnit,
         transferUnitRelationDto.rootUnit,
         username,
-        transaction
+        transaction,
       );
 
       await transaction.commit();
-      return { message: "הקשר ההיררכי הועבר בהצלחה", type: MESSAGE_TYPES.SUCCESS };
+      return {
+        message: 'הקשר ההיררכי הועבר בהצלחה',
+        type: MESSAGE_TYPES.SUCCESS,
+      };
     } catch (error) {
       await transaction.rollback();
       throw error;
@@ -565,15 +607,18 @@ export class UnitHierarchyService {
   }
 
   async fetchLowerUnits(date: string, unitId: number) {
-    const lowerUnits = await this.repository.fetchLowerUnits(new Date(date), unitId)
+    const lowerUnits = await this.repository.fetchLowerUnits(
+      new Date(date),
+      unitId,
+    );
 
-    return lowerUnits.map(lowerUnit => ({
-      lowerUnitId: lowerUnit.dataValues.relatedUnitId
-    }))
+    return lowerUnits.map((lowerUnit) => ({
+      lowerUnitId: lowerUnit.dataValues.relatedUnitId,
+    }));
   }
 
   async fetchActiveRelations(date: string): Promise<UnitRelation[]> {
-    return this.repository.fetchActive(date) as Promise<UnitRelation[]>;
+    return this.repository.fetchActive(date);
   }
 
   buildEmergencyUnitLookup(relations: UnitRelation[]): Record<number, boolean> {
