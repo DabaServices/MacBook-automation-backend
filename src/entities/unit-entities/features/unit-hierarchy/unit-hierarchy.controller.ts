@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -29,8 +30,19 @@ export class UnitHierarchyController {
   }
 
   @Get('hierarchy')
-  async getHierarchy(@Query('date') date: string, @Query('unit') unit: number) {
+  async getHierarchy(
+    @Query('date') date: string,
+    @Query('unit', ParseIntPipe) unit: number,
+  ) {
     return this.service.getHierarchyForUser(unit, date);
+  }
+
+  @Get('related')
+  async getRelatedUnits(
+    @Query('date') date: string,
+    @Query('unit', ParseIntPipe) unit: number,
+  ) {
+    return this.service.fetchLowerUnits(date, unit);
   }
 
   @Post('hierarchy')

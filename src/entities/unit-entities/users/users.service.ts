@@ -9,7 +9,7 @@ export class UsersService {
 
   changeUnitForUser(changeUnitUser: ChangeUserUnitDTO) {
     return this.repository.changeUnitForUser({
-      id: changeUnitUser.userId,
+      userId: changeUnitUser.userId,
       unitId: changeUnitUser.unitId,
     } as IUser);
   }

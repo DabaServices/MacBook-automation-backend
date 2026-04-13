@@ -7,7 +7,7 @@ import {
 } from 'sequelize-typescript';
 
 export type IUser = {
-  id: string;
+  userId: string;
   unitId: number;
   name: string;
 };
