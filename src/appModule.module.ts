@@ -9,16 +9,16 @@ const sequelizeInitializer = (configService: ConfigService) => {
     configService.get<string>('ENVIRONMENT') ?? '',
   )
     ? {
-        host: configService.get<string>('DB_HOST'),
-        password: configService.get<string>('DB_PASSWORD'),
-        username: configService.get<string>('DB_USER'),
-        database: configService.get<string>('DB_NAME'),
-      }
+      host: configService.get<string>('DB_HOST'),
+      password: configService.get<string>('DB_PASSWORD'),
+      username: configService.get<string>('DB_USER'),
+      database: configService.get<string>('DB_NAME'),
+    }
     : {
-        host: configService.get<string>('DB_HOST'),
-        user: configService.get<string>('DB_USER'),
-        database: configService.get<string>('DB_NAME'),
-      };
+      host: configService.get<string>('DB_HOST'),
+      user: configService.get<string>('DB_USER'),
+      database: configService.get<string>('DB_NAME'),
+    };
 };
 
 @Module({
@@ -31,6 +31,14 @@ const sequelizeInitializer = (configService: ConfigService) => {
         dialect: 'postgres',
         ...sequelizeInitializer(configService),
         port: configService.get<number>('DB_PORT'),
+        define: {
+          schema: configService.get<string>('DB_SCHEMA', '')
+        },
+        hooks: {
+          afterConnect: async (connection: any) => {
+            await connection.query(`SET search_path TO ${configService.get<string>('DB_SCHEMA', 'public')}`)
+          }
+        },
         timezone: 'Asia/Jerusalem',
         autoLoadModels: true,
         synchronize: false,
@@ -40,4 +48,4 @@ const sequelizeInitializer = (configService: ConfigService) => {
     ...modules,
   ],
 })
-export class AppModule {}
+export class AppModule { }
