@@ -1,11 +1,17 @@
-import { Column, DataType, Model, PrimaryKey, Table } from "sequelize-typescript";
+import {
+  Column,
+  DataType,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
 
 export type IUnitStatusType = {
   id: number;
   description: string;
 };
 
-@Table({ tableName: "unit_status_types", timestamps: false })
+@Table({ tableName: 'unit_status_types', timestamps: false })
 export class UnitStatusType extends Model<IUnitStatusType> {
   @PrimaryKey
   @Column(DataType.INTEGER)

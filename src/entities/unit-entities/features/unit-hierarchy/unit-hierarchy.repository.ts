@@ -1,13 +1,13 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/sequelize";
-import { Op } from "sequelize";
-import { Transaction } from "sequelize";
-import { UNIT_RELATION_TYPES } from "src/contants";
-import { Unit } from "../../unit/unit.model";
-import { UnitRelation } from "../../unit-relations/unit-relation.model";
-import { UnitId } from "../../unit-id/unit-id.model";
-import { UnitStatus } from "../../units-statuses/units-statuses.model";
-import { UnitStatusType } from "../../unit-status-type/unit-status-type.model";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
+import { Transaction } from 'sequelize';
+import { UNIT_RELATION_TYPES } from 'src/contants';
+import { Unit } from '../../unit/unit.model';
+import { UnitRelation } from '../../unit-relations/unit-relation.model';
+import { UnitId } from '../../unit-id/unit-id.model';
+import { UnitStatus } from '../../units-statuses/units-statuses.model';
+import { UnitStatusType } from '../../unit-status-type/unit-status-type.model';
 
 export type UnitRelationEdge = {
   unitId: number;
@@ -34,75 +34,97 @@ export type UnitStatusSnapshot = {
 @Injectable()
 export class UnitHierarchyRepository {
   constructor(
-    @InjectModel(UnitRelation) private readonly unitRelationModel: typeof UnitRelation,
-    @InjectModel(UnitStatus) private readonly unitStatusTypesModel: typeof UnitStatus,
+    @InjectModel(UnitRelation)
+    private readonly unitRelationModel: typeof UnitRelation,
+    @InjectModel(UnitStatus)
+    private readonly unitStatusTypesModel: typeof UnitStatus,
     @InjectModel(Unit) private readonly unitDetailModel: typeof Unit,
-  ) { }
+  ) {}
 
   fetchActive(date: string) {
     return this.unitRelationModel.findAll({
-      include: [{
-        attributes: ['id'],
-        model: UnitId,
-        as: 'unit',
-        required: true,
-        include: [{
-          attributes: ['unitStatusId'],
-          model: UnitStatus,
-          as: 'unitStatus',
-          required: false,
-          include: [{
-            model: UnitStatusType,
-            as: "unitStatus",
-          }],
-          where: {
-            date,
-          }
+      include: [
+        {
+          attributes: ['id'],
+          model: UnitId,
+          as: 'unit',
+          required: true,
+          include: [
+            {
+              attributes: ['unitStatusId'],
+              model: UnitStatus,
+              as: 'unitStatus',
+              required: false,
+              include: [
+                {
+                  model: UnitStatusType,
+                  as: 'unitStatus',
+                },
+              ],
+              where: {
+                date,
+              },
+            },
+            {
+              attributes: [
+                'unitId',
+                'description',
+                'tsavIrgunCodeId',
+                'unitLevelId',
+              ],
+              model: Unit,
+            },
+          ],
         },
         {
-          attributes: ["unitId", "description", "tsavIrgunCodeId", "unitLevelId"],
-          model: Unit
-        }]
-      },
-      {
-        attributes: ['id'],
-        model: UnitId,
-        as: 'relatedUnit',
-        required: true,
-        include: [{
-          attributes: ['unitStatusId'],
-          model: UnitStatus,
-          as: 'unitStatus',
-          required: false,
-          include: [{
-            model: UnitStatusType,
-            as: "unitStatus",
-          }],
-          where: {
-            date,
-          }
+          attributes: ['id'],
+          model: UnitId,
+          as: 'relatedUnit',
+          required: true,
+          include: [
+            {
+              attributes: ['unitStatusId'],
+              model: UnitStatus,
+              as: 'unitStatus',
+              required: false,
+              include: [
+                {
+                  model: UnitStatusType,
+                  as: 'unitStatus',
+                },
+              ],
+              where: {
+                date,
+              },
+            },
+            {
+              attributes: [
+                'unitId',
+                'description',
+                'tsavIrgunCodeId',
+                'unitLevelId',
+              ],
+              model: Unit,
+            },
+          ],
         },
-        {
-          attributes: ["unitId", "description", "tsavIrgunCodeId", "unitLevelId"],
-          model: Unit
-        }]
-      }],
+      ],
       where: {
         unitRelationId: UNIT_RELATION_TYPES.ZRA,
         startDate: { [Op.lte]: date },
-        endDate: { [Op.gt]: date }
-      }
-    })
+        endDate: { [Op.gt]: date },
+      },
+    });
   }
 
   fetchAllActiveUnitDetails(date: string) {
     return this.unitDetailModel.findAll({
-      attributes: ["unitId", "description", "tsavIrgunCodeId", "unitLevelId"],
+      attributes: ['unitId', 'description', 'tsavIrgunCodeId', 'unitLevelId'],
       where: {
         startDate: { [Op.lte]: date },
         endDate: { [Op.gt]: date },
       },
-      order: [["startDate", "DESC"]],
+      order: [['startDate', 'DESC']],
     });
   }
 
@@ -110,16 +132,18 @@ export class UnitHierarchyRepository {
     if (unitIds.length === 0) return Promise.resolve([]);
 
     return this.unitStatusTypesModel.findAll({
-      attributes: ["unitId", "unitStatusId", "date"],
+      attributes: ['unitId', 'unitStatusId', 'date'],
       where: {
         unitId: { [Op.in]: unitIds },
         date,
       },
-      include: [{
-        model: UnitStatusType,
-        as: "unitStatus",
-      }],
-      order: [["date", "DESC"]],
+      include: [
+        {
+          model: UnitStatusType,
+          as: 'unitStatus',
+        },
+      ],
+      order: [['date', 'DESC']],
     });
   }
 
@@ -127,14 +151,14 @@ export class UnitHierarchyRepository {
     if (childUnitIds.length === 0) return Promise.resolve([]);
 
     return this.unitRelationModel.findAll({
-      attributes: ["unitId", "relatedUnitId"],
+      attributes: ['unitId', 'relatedUnitId'],
       where: {
         unitRelationId: UNIT_RELATION_TYPES.ZRA,
         relatedUnitId: { [Op.in]: childUnitIds },
         startDate: { [Op.lte]: date },
         endDate: { [Op.gt]: date },
       },
-      order: [["startDate", "DESC"]],
+      order: [['startDate', 'DESC']],
     });
   }
 
@@ -142,7 +166,7 @@ export class UnitHierarchyRepository {
     date: string,
     rootUnitId: number,
     lowerUnitId: number,
-    transaction?: Transaction
+    transaction?: Transaction,
   ) {
     if (rootUnitId === lowerUnitId) return true;
 
@@ -151,7 +175,7 @@ export class UnitHierarchyRepository {
 
     while (frontier.length > 0) {
       const relations = await this.unitRelationModel.findAll({
-        attributes: ["unitId", "relatedUnitId"],
+        attributes: ['unitId', 'relatedUnitId'],
         where: {
           unitRelationId: UNIT_RELATION_TYPES.ZRA,
           unitId: { [Op.in]: frontier },
@@ -177,17 +201,21 @@ export class UnitHierarchyRepository {
     return false;
   }
 
-  fetchUnitsActiveDetails(date: string, unitIds: number[], transaction?: Transaction) {
+  fetchUnitsActiveDetails(
+    date: string,
+    unitIds: number[],
+    transaction?: Transaction,
+  ) {
     if (unitIds.length === 0) return Promise.resolve([]);
 
     return this.unitDetailModel.findAll({
-      attributes: ["unitId", "objectType", "unitLevelId"],
+      attributes: ['unitId', 'objectType', 'unitLevelId'],
       where: {
         unitId: { [Op.in]: unitIds },
         startDate: { [Op.lte]: date },
         endDate: { [Op.gt]: date },
       },
-      order: [["startDate", "DESC"]],
+      order: [['startDate', 'DESC']],
       transaction,
     });
   }
@@ -196,23 +224,26 @@ export class UnitHierarchyRepository {
     upperUnit: number,
     lowerUnit: number,
     date: string,
-    transaction?: Transaction
+    transaction?: Transaction,
   ) {
-    return this.unitRelationModel.upsert({
-      unitId: upperUnit,
-      relatedUnitId: lowerUnit,
-      unitRelationId: UNIT_RELATION_TYPES.ZRA,
-      unitObjectType: 'O',
-      relatedUnitObjectType: 'O',
-      startDate: new Date(date),
-      endDate: new Date("9999-12-31"),
-    }, { transaction });
+    return this.unitRelationModel.upsert(
+      {
+        unitId: upperUnit,
+        relatedUnitId: lowerUnit,
+        unitRelationId: UNIT_RELATION_TYPES.ZRA,
+        unitObjectType: 'O',
+        relatedUnitObjectType: 'O',
+        startDate: new Date(date),
+        endDate: new Date('9999-12-31'),
+      },
+      { transaction },
+    );
   }
 
   fetchCurrentParentRelation(
     lowerUnit: number,
     date: string,
-    transaction?: Transaction
+    transaction?: Transaction,
   ) {
     return this.unitRelationModel.findOne({
       where: {
@@ -221,7 +252,7 @@ export class UnitHierarchyRepository {
         startDate: { [Op.lte]: date },
         endDate: { [Op.gt]: date },
       },
-      order: [["startDate", "DESC"]],
+      order: [['startDate', 'DESC']],
       transaction,
     });
   }
@@ -229,15 +260,15 @@ export class UnitHierarchyRepository {
   fetchUnitStatusForDate(
     unitId: number,
     date: string,
-    transaction?: Transaction
+    transaction?: Transaction,
   ) {
     return this.unitStatusTypesModel.findOne({
-      attributes: ["unitStatusId"],
+      attributes: ['unitStatusId'],
       where: {
         unitId,
         date,
       },
-      order: [["date", "DESC"]],
+      order: [['date', 'DESC']],
       transaction,
     });
   }
@@ -245,13 +276,13 @@ export class UnitHierarchyRepository {
   closeRelationOnDate(
     relation: UnitRelation,
     date: string,
-    transaction?: Transaction
+    transaction?: Transaction,
   ) {
     return relation.update(
       {
         endDate: new Date(date),
       },
-      { transaction }
+      { transaction },
     );
   }
 
@@ -262,8 +293,8 @@ export class UnitHierarchyRepository {
         unitId,
         endDate: { [Op.gt]: date },
         startDate: { [Op.lte]: date },
-        unitRelationId: UNIT_RELATION_TYPES.ZRA
-      }
-    })
+        unitRelationId: UNIT_RELATION_TYPES.ZRA,
+      },
+    });
   }
 }

@@ -1,9 +1,15 @@
 import {
-  BelongsTo, Column, DataType, ForeignKey, Model, PrimaryKey, Table
-} from "sequelize-typescript";
-import { Material } from "src/entities/material-entities/material/material.model";
-import { UnitId } from "src/entities/unit-entities/unit-id/unit-id.model";
-import { Report } from "../report/report.model";
+  BelongsTo,
+  Column,
+  DataType,
+  ForeignKey,
+  Model,
+  PrimaryKey,
+  Table,
+} from 'sequelize-typescript';
+import { UnitId } from 'src/entities/unit-entities/unit-id/unit-id.model';
+import { Report } from '../report/report.model';
+import { Material } from 'src/entities/material-entities/material/material.model';
 
 export type IReportItem = {
   reportId: number;
@@ -18,45 +24,46 @@ export type IReportItem = {
   modifiedAt?: Date | null;
 };
 
-@Table({ tableName: "report_items", timestamps: false })
+@Table({ tableName: 'report_items', timestamps: false })
 export class ReportItem extends Model<IReportItem> {
   @PrimaryKey
   @ForeignKey(() => Report)
-  @Column({ field: "report_id", type: DataType.INTEGER })
+  @Column({ field: 'report_id', type: DataType.INTEGER })
   declare reportId: number;
 
   @PrimaryKey
   @ForeignKey(() => Material)
-  @Column({ field: "material_id", type: DataType.STRING(18) })
+  @Column({ field: 'material_id', type: DataType.STRING(18) })
   declare materialId: string;
 
   @PrimaryKey
-  @Column({ field: "reporting_level", type: DataType.INTEGER })
+  @Column({ field: 'reporting_level', type: DataType.INTEGER })
   declare reportingLevel: number;
 
   @ForeignKey(() => UnitId)
-  @Column({ field: "reporting_unit", type: DataType.INTEGER })
+  @Column({ field: 'reporting_unit', type: DataType.INTEGER })
   declare reportingUnitId: number;
 
-  @Column({ field: "reported_quantity", type: DataType.DECIMAL })
+  @Column({ field: 'reported_quantity', type: DataType.DECIMAL })
   declare reportedQuantity: string | null;
 
-  @Column({ field: "confirmed_quantity", type: DataType.DECIMAL })
+  @Column({ field: 'confirmed_quantity', type: DataType.DECIMAL })
   declare confirmedQuantity: string | null;
 
   @Column(DataType.STRING(20))
   declare status: string | null;
 
-  @Column({ field: "changed_at", type: DataType.TIME })
+  @Column({ field: 'changed_at', type: DataType.TIME })
   declare changedAt: string | null;
 
-  @Column({ field: "changed_by", type: DataType.STRING(20) })
+  @Column({ field: 'changed_by', type: DataType.STRING(20) })
   declare changedBy: string | null;
 
-  @Column({ field: "modified_at", type: DataType.DATE })
+  @Column({ field: 'modified_at', type: DataType.DATE })
   declare modifiedAt: Date | null;
 
   @BelongsTo(() => Report) declare report?: Report;
   @BelongsTo(() => Material) declare material?: Material;
-  @BelongsTo(() => UnitId, { foreignKey: "reportingUnitId" }) declare reportingUnit?: UnitId;
+  @BelongsTo(() => UnitId, { foreignKey: 'reportingUnitId' })
+  declare reportingUnit?: UnitId;
 }

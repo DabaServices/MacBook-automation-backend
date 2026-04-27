@@ -1,13 +1,13 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/sequelize";
-import { Transaction } from "sequelize";
-import { Report } from "./report.model";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { Transaction } from 'sequelize';
+import { Report } from './report.model';
 
 @Injectable()
 export class ReportRoutingRepository {
   constructor(
     @InjectModel(Report) private readonly reportModel: typeof Report,
-  ) { }
+  ) {}
 
   rerouteUnitReportsToParentForDate(
     unitId: number,
@@ -15,7 +15,7 @@ export class ReportRoutingRepository {
     recipientUnitId: number | null,
     reporterUnitId: number | null,
     createdBy: string | null,
-    transaction?: Transaction
+    transaction?: Transaction,
   ) {
     return this.reportModel.update(
       {
@@ -29,7 +29,7 @@ export class ReportRoutingRepository {
           createdOn: date,
         },
         transaction,
-      }
+      },
     );
   }
 }

@@ -6,9 +6,8 @@ import {
   Model,
   PrimaryKey,
   Table,
-  Index,
-} from "sequelize-typescript";
-import { UnitId } from "../unit-id/unit-id.model";
+} from 'sequelize-typescript';
+import { UnitId } from '../unit-id/unit-id.model';
 
 export type IUnit = {
   unitId: number;
@@ -23,33 +22,33 @@ export type IUnit = {
   tsavIrgunCodeId?: string | null;
 };
 
-@Table({ tableName: "units", timestamps: false })
+@Table({ tableName: 'units', timestamps: false })
 export class Unit extends Model<IUnit> {
   @PrimaryKey
   @ForeignKey(() => UnitId)
-  @Column({ field: "unit_id", type: DataType.INTEGER })
+  @Column({ field: 'unit_id', type: DataType.INTEGER })
   declare unitId: number;
 
   @PrimaryKey
-  @Column({ field: "start_date", type: DataType.DATE })
+  @Column({ field: 'start_date', type: DataType.DATE })
   declare startDate: Date;
 
-  @Column({ field: "end_date", type: DataType.DATE })
+  @Column({ field: 'end_date', type: DataType.DATE })
   declare endDate: Date;
 
-  @Column({ field: "object_type", type: DataType.STRING(2) })
+  @Column({ field: 'object_type', type: DataType.STRING(2) })
   declare objectType: string;
 
   @Column(DataType.STRING(255))
   declare description: string | null;
 
-  @Column({ field: "level_id", type: DataType.INTEGER })
+  @Column({ field: 'level_id', type: DataType.INTEGER })
   declare unitLevelId: number;
 
-  @Column({ field: "unit_type_id", type: DataType.INTEGER })
+  @Column({ field: 'unit_type_id', type: DataType.INTEGER })
   declare unitTypeId: number | null;
 
-  @Column({ field: "tsav_irgun_code", type: DataType.STRING(10) })
+  @Column({ field: 'tsav_irgun_code', type: DataType.STRING(10) })
   declare tsavIrgunCodeId: string | null;
 
   @BelongsTo(() => UnitId)
